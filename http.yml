@@ -78,3 +78,22 @@ import_rules:
   - name: rs-import
     pattern: '^use\s+(?P<import>[\w:]+)'
     language: .rs
+
+
+function_rules:
+  - name: go-function
+    pattern: 'func\s+(?P<function>\w+)\s*\('
+  - name: py-def
+    pattern: 'def\s+(?P<function>\w+)\s*\('
+  - name: js-function
+    pattern: 'function\s+(?P<function>\w+)\s*\('
+  - name: js-arrow-function
+    pattern: 'const\s+(?P<function>\w+)\s*=\s*\(.*\)\s*=>'
+  - name: rs-function
+    pattern: 'fn\s+(?P<function>\w+)\s*\('
+  - name: csharp-function
+    pattern: '(public|private|protected)?\s*(static)?\s*\w+\s+(?P<function>\w+)\s*\('
+  - name: java-function
+    pattern: '(public|private|protected)?\s*(static)?\s*\w+\s+(?P<function>\w+)\s*\('
+  - name: cpp-function
+    pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
