@@ -97,3 +97,27 @@ function_rules:
     pattern: '(public|private|protected)?\s*(static)?\s*\w+\s+(?P<function>\w+)\s*\('
   - name: cpp-function
     pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
+
+
+loop_rules:
+  - name: for-loop
+    pattern: 'for\s*\(.*\)\s*{'
+  - name: while-loop
+    pattern: 'while\s*\(.*\)\s*{'
+  - name: python-for
+    pattern: 'for\s+.*:\s*$'
+  - name: python-while
+    pattern: 'while\s+.*:\s*$'
+  - name: go-loops
+    pattern: '(?P<loop>for|range)\s+.*\s*{'
+  
+
+assignment_rules:
+  - name: variable-assignment
+    pattern: '(?P<var>\w+)\s*=\s*.*'
+  - name: go-short-variable-declaration
+    pattern: '(?P<var>\w+)\s*:=\s*.*'
+
+parameter_rules:
+  - name: function-parameters
+    pattern: '\((?P<params>[^)]*)\)'
