@@ -22,12 +22,6 @@ import (
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type routeKey struct {
-	line   int
-	method string
-	path   string
-}
-
 type SourceFile struct {
 	Path     string
 	Content  []byte
@@ -51,7 +45,6 @@ type RoutePattern struct {
 	MethodIdx   int
 	PathIdx     int
 	ReceiverIdx int // 0 if not captured
-	Language    string
 	Multi       bool
 }
 
@@ -110,10 +103,9 @@ func resolvePrefixes(content []byte, rules []PrefixRule) map[string]string {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 type RuleDef struct {
-	Name     string `yaml:"name"`
-	Pattern  string `yaml:"pattern"`  // METHOD placeholder, named groups ?P<receiver> ?P<method> ?P<path>
-	Language string `yaml:"language"` // e.g. .py, .go — empty means all
-	Multi    bool   `yaml:"multi"`
+	Name    string `yaml:"name"`
+	Pattern string `yaml:"pattern"` // METHOD placeholder, named groups ?P<receiver> ?P<method> ?P<path>
+	Multi   bool   `yaml:"multi"`
 }
 
 type PrefixRuleDef struct {
@@ -238,13 +230,13 @@ func compileRule(def RuleDef, methods string) (RoutePattern, error) {
 	if err != nil {
 		return RoutePattern{}, err
 	}
+
 	return RoutePattern{
 		Name:        def.Name,
 		Re:          re,
 		MethodIdx:   re.SubexpIndex("method"),
 		PathIdx:     re.SubexpIndex("path"),
 		ReceiverIdx: re.SubexpIndex("receiver"),
-		Language:    def.Language,
 		Multi:       def.Multi,
 	}, nil
 }
@@ -264,7 +256,6 @@ func compilePrefixRule(def PrefixRuleDef) (PrefixRule, error) {
 
 func (e *RegexExtractor) Extract(f SourceFile) []Primitive {
 	prefixes := resolvePrefixes(f.Content, e.prefixRules)
-	seen := make(map[routeKey]bool)
 
 	var out []Primitive
 	sc := bufio.NewScanner(bytes.NewReader(f.Content))
@@ -275,10 +266,6 @@ func (e *RegexExtractor) Extract(f SourceFile) []Primitive {
 		text := sc.Text()
 
 		for _, p := range e.patterns {
-			if p.Language != "" && p.Language != f.Ext {
-				continue
-			}
-
 			for _, m := range p.Re.FindAllStringSubmatchIndex(text, -1) {
 				method := subgroup(text, m, p.MethodIdx)
 				path := subgroup(text, m, p.PathIdx)
@@ -287,6 +274,7 @@ func (e *RegexExtractor) Extract(f SourceFile) []Primitive {
 					continue
 				}
 
+				// prepend any known prefix for this receiver
 				if prefix, ok := prefixes[receiver]; ok {
 					path = prefix + path
 				}
@@ -295,11 +283,6 @@ func (e *RegexExtractor) Extract(f SourceFile) []Primitive {
 					if !e.allowed[resolved] {
 						continue
 					}
-					key := routeKey{line, resolved, path}
-					if seen[key] {
-						continue
-					}
-					seen[key] = true
 					out = append(out, Primitive{
 						Kind:        "http_route",
 						File:        f.Path,
@@ -401,10 +384,10 @@ func ScanDir(root string) ([]SourceFile, error) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 func main() {
-	_, err := os.Stat("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml")
+	_, err := os.Stat("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/test/http.yml")
 	fmt.Println(err)
 
-	cfg, err := LoadConfig("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml")
+	cfg, err := LoadConfig("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/test/http.yml")
 	if err != nil {
 		log.Printf("config error: %v", err)
 		cfg = DefaultConfig()
@@ -417,7 +400,7 @@ func main() {
 	extractor := NewRegexExtractor(cfg)
 	importRules := compileImportRules(cfg.ImportRules)
 
-	files, err := ScanDir("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic")
+	files, err := ScanDir("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/fastAPIdemo-master")
 	if err != nil {
 		log.Fatal(err)
 	}
