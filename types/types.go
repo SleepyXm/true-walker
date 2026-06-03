@@ -6,8 +6,6 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-// ── Primitive Types ────────────────────────────────────────────────────────────────────
-
 type SourceFile struct {
 	Path     string
 	Content  []byte
@@ -30,7 +28,7 @@ type RoutePattern struct {
 	Re          *regexp.Regexp
 	MethodIdx   int
 	PathIdx     int
-	ReceiverIdx int // 0 if not captured
+	ReceiverIdx int
 	Language    string
 	Multi       bool
 }
@@ -42,29 +40,27 @@ type PrefixRule struct {
 	PrefixIdx   int
 }
 
-// ── Config ────────────────────────────────────────────────────────────────────
+type ImportRule struct {
+	Re       *regexp.Regexp
+	Language string
+}
 
 type RuleDef struct {
 	Name     string `yaml:"name"`
-	Pattern  string `yaml:"pattern"`  // METHOD placeholder, named groups ?P<receiver> ?P<method> ?P<path>
-	Language string `yaml:"language"` // e.g. .py, .go — empty means all
+	Pattern  string `yaml:"pattern"`
+	Language string `yaml:"language"`
 	Multi    bool   `yaml:"multi"`
 }
 
 type PrefixRuleDef struct {
 	Name    string `yaml:"name"`
-	Pattern string `yaml:"pattern"` // named groups ?P<var> ?P<receiver> ?P<prefix>
+	Pattern string `yaml:"pattern"`
 }
 
 type ImportRuleDef struct {
 	Name     string `yaml:"name"`
 	Pattern  string `yaml:"pattern"`
 	Language string `yaml:"language"`
-}
-
-type ImportRule struct {
-	Re       *regexp.Regexp
-	Language string
 }
 
 type Config struct {
