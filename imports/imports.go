@@ -24,7 +24,8 @@ func CompileRules(defs []types.ImportRuleDef) []types.ImportRule {
 	return out
 }
 
-func Extract(f types.SourceFile, rules []types.ImportRule) []string {
+// Extract returns imports with their alias and usage line numbers.
+func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 	content := f.Content
 	switch f.Ext {
 	case ".py":
@@ -33,7 +34,23 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []string {
 		content = collapse(content, '{', '}')
 	}
 
-	var imports []string
+	byPath := make(map[string]*types.Import)
+	var order []string
+
+	add := func(path, name, alias string) {
+		if _, ok := byPath[path]; !ok {
+			byPath[path] = &types.Import{Path: path, Usages: make(map[string][]int)}
+			order = append(order, path)
+		}
+		imp := byPath[path]
+		if alias != "" {
+			imp.Alias = alias
+		}
+		if name != "" {
+			imp.Names = append(imp.Names, name)
+		}
+	}
+
 	sc := bufio.NewScanner(bytes.NewReader(content))
 	for sc.Scan() {
 		line := sc.Text()
@@ -48,41 +65,107 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []string {
 			switch f.Ext {
 			case ".py":
 				if idx := r.Re.SubexpIndex("imports"); idx > 0 {
-					for _, name := range strings.Split(subgroup(line, m, idx), ",") {
-						if t := strings.TrimSpace(name); t != "" {
-							imports = append(imports, t)
+					for _, token := range strings.Split(subgroup(line, m, idx), ",") {
+						name, alias := parseAlias(strings.TrimSpace(token))
+						if name != "" {
+							add(name, "", alias)
 						}
 					}
 				}
 				if idxMod := r.Re.SubexpIndex("module"); idxMod > 0 {
 					if idxNames := r.Re.SubexpIndex("names"); idxNames > 0 {
 						mod := subgroup(line, m, idxMod)
-						for _, name := range strings.Split(subgroup(line, m, idxNames), ",") {
-							if t := strings.TrimSpace(name); t != "" {
-								imports = append(imports, mod+"."+t)
+						for _, token := range strings.Split(subgroup(line, m, idxNames), ",") {
+							name, alias := parseAlias(strings.TrimSpace(token))
+							if name != "" {
+								add(mod, name, alias)
 							}
 						}
 					}
 				}
 			default:
 				if idx := r.Re.SubexpIndex("import"); idx > 0 {
-					if imp := subgroup(line, m, idx); imp != "" {
-						imports = append(imports, imp)
+					if path := subgroup(line, m, idx); path != "" {
+						if idxNames := r.Re.SubexpIndex("names"); idxNames > 0 {
+							for _, token := range strings.Split(subgroup(line, m, idxNames), ",") {
+								name, alias := parseAlias(strings.TrimSpace(token))
+								if name != "" {
+									add(path, name, alias)
+								}
+							}
+						} else {
+							add(path, "", "")
+						}
 					}
 				}
 			}
 		}
 	}
 
-	seen := make(map[string]bool)
-	var out []string
-	for _, imp := range imports {
-		if !seen[imp] {
-			seen[imp] = true
-			out = append(out, imp)
-		}
+	out := make([]types.Import, 0, len(order))
+	for _, path := range order {
+		out = append(out, *byPath[path])
 	}
 	return out
+}
+
+func Resolve(f types.SourceFile, imps []types.Import) []types.Import {
+	for i, imp := range imps {
+		if imp.Alias != "" {
+			imps[i].Usages[imp.Alias] = findUsages(f.Content, imp.Alias)
+		}
+		for _, name := range imp.Names {
+			imps[i].Usages[name] = findUsages(f.Content, name)
+		}
+		if imp.Alias == "" && len(imp.Names) == 0 {
+			imps[i].Usages[imp.Path] = findUsages(f.Content, imp.Path)
+		}
+	}
+	return imps
+}
+
+// parseAlias splits "pandas as pd" → ("pandas", "pd"), or "pandas" → ("pandas", "").
+func parseAlias(s string) (path, alias string) {
+	parts := strings.Fields(s)
+	for i, p := range parts {
+		if strings.EqualFold(p, "as") && i+1 < len(parts) {
+			return strings.Join(parts[:i], " "), parts[i+1]
+		}
+	}
+	return s, ""
+}
+
+// resolveIdent returns alias if set, otherwise the last segment of path.
+func resolveIdent(path, alias string) string {
+	if alias != "" {
+		return alias
+	}
+	path = strings.TrimRight(path, "/")
+	if i := strings.LastIndexAny(path, "/.@-"); i >= 0 {
+		return path[i+1:]
+	}
+	return path
+}
+
+// findUsages scans content for lines where ident appears as a word.
+func findUsages(content []byte, ident string) []int {
+	if ident == "" {
+		return nil
+	}
+	re, err := regexp.Compile(`\b` + regexp.QuoteMeta(ident) + `\b`)
+	if err != nil {
+		return nil
+	}
+	var lines []int
+	sc := bufio.NewScanner(bytes.NewReader(content))
+	lineNum := 0
+	for sc.Scan() {
+		lineNum++
+		if re.MatchString(sc.Text()) {
+			lines = append(lines, lineNum)
+		}
+	}
+	return lines
 }
 
 func collapse(src []byte, open, close byte) []byte {
@@ -91,15 +174,6 @@ func collapse(src []byte, open, close byte) []byte {
 	var prefix string
 	var names []string
 	inBlock := false
-
-	flush := func() {
-		buf.WriteString(prefix)
-		buf.WriteByte(' ')
-		buf.WriteString(strings.Join(names, ", "))
-		buf.WriteByte('\n')
-		names = nil
-		inBlock = false
-	}
 
 	collect := func(s string) {
 		for _, n := range strings.Split(s, ",") {
@@ -114,15 +188,14 @@ func collapse(src []byte, open, close byte) []byte {
 		if !inBlock {
 			openIdx := strings.IndexByte(line, open)
 			if openIdx >= 0 && reImportBlockStart.MatchString(line) {
-				inBlock = true
-				prefix = strings.TrimRight(line[:openIdx], " \t")
 				after := line[openIdx+1:]
 				if strings.IndexByte(after, close) >= 0 {
+					// already single-line, write as-is
 					buf.WriteString(line)
 					buf.WriteByte('\n')
-					inBlock = false
-					names = nil
 				} else {
+					inBlock = true
+					prefix = strings.TrimRight(line[:openIdx], " \t")
 					collect(after)
 				}
 			} else {
@@ -133,7 +206,18 @@ func collapse(src []byte, open, close byte) []byte {
 		}
 		if closeIdx := strings.IndexByte(line, close); closeIdx >= 0 {
 			collect(line[:closeIdx])
-			flush()
+			remainder := strings.TrimSpace(line[closeIdx+1:])
+			buf.WriteString(prefix)
+			buf.WriteString(" { ")
+			buf.WriteString(strings.Join(names, ", "))
+			buf.WriteString(" }")
+			if remainder != "" {
+				buf.WriteByte(' ')
+				buf.WriteString(remainder)
+			}
+			buf.WriteByte('\n')
+			names = nil
+			inBlock = false
 		} else {
 			collect(line)
 		}

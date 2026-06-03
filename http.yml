@@ -102,8 +102,8 @@ import_rules:
     pattern: '^import\s+\*\s+as\s+\w+\s+from\s+["''](?P<import>[^"'']+)["'']'
     language: .js
 
-  - name: js-import-named
-    pattern: '^import\s+\{[^}]+\}\s+from\s+["''](?P<import>[^"'']+)["'']'
+  - name: js-import-named  
+    pattern: '^import\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
     language: .js
 
   - name: js-require
@@ -115,7 +115,7 @@ import_rules:
     language: .ts
 
   - name: ts-import-named
-    pattern: '^import\s+\{[^}]+\}\s+from\s+["''](?P<import>[^"'']+)["'']'
+    pattern: '^import\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
     language: .ts
 
   - name: ts-require

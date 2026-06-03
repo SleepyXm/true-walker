@@ -63,6 +63,13 @@ type ImportRuleDef struct {
 	Language string `yaml:"language"`
 }
 
+type Import struct {
+	Path   string
+	Alias  string           // "import x as y" → y
+	Names  []string         // "from x import A, B" or "import { A, B } from x"
+	Usages map[string][]int // name → line numbers
+}
+
 type Config struct {
 	Name         string          `yaml:"name"`
 	RouteMethods []string        `yaml:"route_methods"`
