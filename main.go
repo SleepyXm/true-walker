@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"tree-sit/test/types"
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/golang"
@@ -28,46 +29,12 @@ type routeKey struct {
 	path   string
 }
 
-type SourceFile struct {
-	Path     string
-	Content  []byte
-	Ext      string
-	Language *sitter.Language
-}
-
-type Primitive struct {
-	Kind        string
-	File        string
-	StartLine   int
-	StartColumn int
-	EndLine     int
-	EndColumn   int
-	Data        map[string]string
-}
-
-type RoutePattern struct {
-	Name        string
-	Re          *regexp.Regexp
-	MethodIdx   int
-	PathIdx     int
-	ReceiverIdx int // 0 if not captured
-	Language    string
-	Multi       bool
-}
-
-type PrefixRule struct {
-	Re          *regexp.Regexp
-	VarIdx      int
-	ReceiverIdx int
-	PrefixIdx   int
-}
-
 // resolvePrefixes does multiple passes so chained groups resolve correctly:
 //
 //	rg  := router.Group("/api")
 //	v1  := rg.Group("/v1")      → /api/v1
 //	v1.GET("/users")             → /api/v1/users
-func resolvePrefixes(content []byte, rules []PrefixRule) map[string]string {
+func resolvePrefixes(content []byte, rules []types.PrefixRule) map[string]string {
 	prefixes := make(map[string]string)
 
 	sc := bufio.NewScanner(bytes.NewReader(content))
@@ -109,72 +76,48 @@ func resolvePrefixes(content []byte, rules []PrefixRule) map[string]string {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-type RuleDef struct {
-	Name     string `yaml:"name"`
-	Pattern  string `yaml:"pattern"`  // METHOD placeholder, named groups ?P<receiver> ?P<method> ?P<path>
-	Language string `yaml:"language"` // e.g. .py, .go — empty means all
-	Multi    bool   `yaml:"multi"`
-}
-
-type PrefixRuleDef struct {
-	Name    string `yaml:"name"`
-	Pattern string `yaml:"pattern"` // named groups ?P<var> ?P<receiver> ?P<prefix>
-}
-
-type ImportRuleDef struct {
-	Name     string `yaml:"name"`
-	Pattern  string `yaml:"pattern"`
-	Language string `yaml:"language"`
-}
-
-type ImportRule struct {
-	Re       *regexp.Regexp
-	Language string
-}
-
-type Config struct {
-	Name         string          `yaml:"name"`
-	RouteMethods []string        `yaml:"route_methods"`
-	Rules        []RuleDef       `yaml:"route_rules"`
-	PrefixRules  []PrefixRuleDef `yaml:"prefix_rules"`
-	ImportRules  []ImportRuleDef `yaml:"import_rules"`
-}
-
-func LoadConfig(path string) (*Config, error) {
+func LoadConfig(path string) (*types.Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var cfg Config
+	var cfg types.Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
 }
 
-func DefaultConfig() *Config {
-	return &Config{
+func DefaultConfig() *types.Config {
+	return &types.Config{
 		Name:         "http_routes",
 		RouteMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 	}
 }
 
-func compileImportRules(defs []ImportRuleDef) []ImportRule {
-	var out []ImportRule
+func compileImportRules(defs []types.ImportRuleDef) []types.ImportRule {
+	var out []types.ImportRule
 	for _, d := range defs {
 		re, err := regexp.Compile(d.Pattern)
 		if err != nil {
 			log.Printf("skipping import rule %q: %v", d.Name, err)
 			continue
 		}
-		out = append(out, ImportRule{Re: re, Language: d.Language})
+		out = append(out, types.ImportRule{Re: re, Language: d.Language})
 	}
 	return out
 }
 
-func extractImports(f SourceFile, rules []ImportRule) []string {
+func extractImports(f types.SourceFile, rules []types.ImportRule) []string {
+	content := f.Content
+	switch f.Ext {
+	case ".py":
+		content = collapseImports(content, '(', ')')
+	case ".js", ".ts", ".tsx":
+		content = collapseImports(content, '{', '}')
+	}
 	var imports []string
-	sc := bufio.NewScanner(bytes.NewReader(f.Content))
+	sc := bufio.NewScanner(bytes.NewReader(content))
 	for sc.Scan() {
 		line := sc.Text()
 		for _, r := range rules {
@@ -185,22 +128,130 @@ func extractImports(f SourceFile, rules []ImportRule) []string {
 			if m == nil {
 				continue
 			}
-			imp := subgroup(line, m, r.Re.SubexpIndex("import"))
-			if imp != "" {
-				imports = append(imports, imp)
+
+			switch f.Ext {
+			case ".py":
+				// handle "import a, b, c"
+				if idx := r.Re.SubexpIndex("imports"); idx > 0 {
+					text := subgroup(line, m, idx)
+					for _, name := range strings.Split(text, ",") {
+						trimmed := strings.TrimSpace(name)
+						if trimmed != "" {
+							imports = append(imports, trimmed)
+						}
+					}
+				}
+
+				// handle "from x import y, z"
+				if idxModule := r.Re.SubexpIndex("module"); idxModule > 0 {
+					if idxNames := r.Re.SubexpIndex("names"); idxNames > 0 {
+						module := subgroup(line, m, idxModule)
+						names := subgroup(line, m, idxNames)
+						for _, name := range strings.Split(names, ",") {
+							trimmed := strings.TrimSpace(name)
+							if trimmed != "" {
+								imports = append(imports, module+"."+trimmed)
+							}
+						}
+					}
+				}
+
+			default:
+				// fallback for .go, .js, .ts, etc.
+				if idx := r.Re.SubexpIndex("import"); idx > 0 {
+					imp := subgroup(line, m, idx)
+					if imp != "" {
+						imports = append(imports, imp)
+					}
+				}
+			}
+		}
+
+	}
+
+	seen := make(map[string]bool)
+	var deduped []string
+	for _, imp := range imports {
+		if !seen[imp] {
+			seen[imp] = true
+			deduped = append(deduped, imp)
+		}
+	}
+	return deduped
+}
+
+// ── Add this at package level ─────────────────────────────────────────────────
+
+var reImportBlockStart = regexp.MustCompile(`^(from\s+[\w.]+\s+import|import)\s*[\(\{]`)
+
+// collapseImports joins multi-line import blocks into single lines.
+// open/close are the delimiter pair: '('/')' for Python, '{'/'}' for JS/TS.
+func collapseImports(src []byte, open, close byte) []byte {
+	var buf bytes.Buffer
+	sc := bufio.NewScanner(bytes.NewReader(src))
+	var prefix string
+	var names []string
+	inBlock := false
+
+	flush := func() {
+		buf.WriteString(prefix)
+		buf.WriteByte(' ')
+		buf.WriteString(strings.Join(names, ", "))
+		buf.WriteByte('\n')
+		names = nil
+		inBlock = false
+	}
+
+	collect := func(s string) {
+		for _, n := range strings.Split(s, ",") {
+			t := strings.TrimSpace(n)
+			if t != "" && !strings.HasPrefix(t, "#") {
+				names = append(names, t)
 			}
 		}
 	}
-	return imports
+
+	for sc.Scan() {
+		line := sc.Text()
+
+		if !inBlock {
+			openIdx := strings.IndexByte(line, open)
+			if openIdx >= 0 && reImportBlockStart.MatchString(line) {
+				inBlock = true
+				prefix = strings.TrimRight(line[:openIdx], " \t")
+				after := line[openIdx+1:]
+				if closeIdx := strings.IndexByte(after, close); closeIdx >= 0 {
+					buf.WriteString(line)
+					buf.WriteByte('\n')
+					inBlock = false
+					names = nil
+				} else {
+					collect(after)
+				}
+			} else {
+				buf.WriteString(line)
+				buf.WriteByte('\n')
+			}
+			continue
+		}
+
+		if closeIdx := strings.IndexByte(line, close); closeIdx >= 0 {
+			collect(line[:closeIdx])
+			flush()
+		} else {
+			collect(line)
+		}
+	}
+	return buf.Bytes()
 }
 
 type RegexExtractor struct {
-	patterns    []RoutePattern
-	prefixRules []PrefixRule
+	patterns    []types.RoutePattern
+	prefixRules []types.PrefixRule
 	allowed     map[string]bool
 }
 
-func NewRegexExtractor(cfg *Config) *RegexExtractor {
+func NewRegexExtractor(cfg *types.Config) *RegexExtractor {
 	allowed := make(map[string]bool, len(cfg.RouteMethods))
 	for _, m := range cfg.RouteMethods {
 		allowed[strings.ToUpper(m)] = true
@@ -208,7 +259,7 @@ func NewRegexExtractor(cfg *Config) *RegexExtractor {
 
 	methods := strings.ToLower(strings.Join(cfg.RouteMethods, "|"))
 
-	var patterns []RoutePattern
+	var patterns []types.RoutePattern
 	for _, rule := range cfg.Rules {
 		p, err := compileRule(rule, methods)
 		if err != nil {
@@ -218,7 +269,7 @@ func NewRegexExtractor(cfg *Config) *RegexExtractor {
 		patterns = append(patterns, p)
 	}
 
-	var prefixRules []PrefixRule
+	var prefixRules []types.PrefixRule
 	for _, rule := range cfg.PrefixRules {
 		p, err := compilePrefixRule(rule)
 		if err != nil {
@@ -232,13 +283,13 @@ func NewRegexExtractor(cfg *Config) *RegexExtractor {
 	return &RegexExtractor{patterns: patterns, prefixRules: prefixRules, allowed: allowed}
 }
 
-func compileRule(def RuleDef, methods string) (RoutePattern, error) {
+func compileRule(def types.RuleDef, methods string) (types.RoutePattern, error) {
 	pattern := strings.ReplaceAll(def.Pattern, "METHOD", `(?i)(`+methods+`)`)
 	re, err := regexp.Compile(pattern)
 	if err != nil {
-		return RoutePattern{}, err
+		return types.RoutePattern{}, err
 	}
-	return RoutePattern{
+	return types.RoutePattern{
 		Name:        def.Name,
 		Re:          re,
 		MethodIdx:   re.SubexpIndex("method"),
@@ -249,12 +300,12 @@ func compileRule(def RuleDef, methods string) (RoutePattern, error) {
 	}, nil
 }
 
-func compilePrefixRule(def PrefixRuleDef) (PrefixRule, error) {
+func compilePrefixRule(def types.PrefixRuleDef) (types.PrefixRule, error) {
 	re, err := regexp.Compile(def.Pattern)
 	if err != nil {
-		return PrefixRule{}, err
+		return types.PrefixRule{}, err
 	}
-	return PrefixRule{
+	return types.PrefixRule{
 		Re:          re,
 		VarIdx:      re.SubexpIndex("var"),
 		ReceiverIdx: re.SubexpIndex("receiver"),
@@ -262,11 +313,11 @@ func compilePrefixRule(def PrefixRuleDef) (PrefixRule, error) {
 	}, nil
 }
 
-func (e *RegexExtractor) Extract(f SourceFile) []Primitive {
+func (e *RegexExtractor) Extract(f types.SourceFile) []types.Primitive {
 	prefixes := resolvePrefixes(f.Content, e.prefixRules)
 	seen := make(map[routeKey]bool)
 
-	var out []Primitive
+	var out []types.Primitive
 	sc := bufio.NewScanner(bytes.NewReader(f.Content))
 	line := 0
 
@@ -300,7 +351,7 @@ func (e *RegexExtractor) Extract(f SourceFile) []Primitive {
 						continue
 					}
 					seen[key] = true
-					out = append(out, Primitive{
+					out = append(out, types.Primitive{
 						Kind:        "http_route",
 						File:        f.Path,
 						StartLine:   line,
@@ -367,8 +418,8 @@ func Walk(node *sitter.Node, source []byte, depth int) {
 
 // ── File Scanner ──────────────────────────────────────────────────────────────
 
-func ScanDir(root string) ([]SourceFile, error) {
-	var files []SourceFile
+func ScanDir(root string) ([]types.SourceFile, error) {
+	var files []types.SourceFile
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -386,7 +437,7 @@ func ScanDir(root string) ([]SourceFile, error) {
 		ext := filepath.Ext(path)
 		lang := Languages[ext] // nil is fine, regex doesn't need it
 
-		files = append(files, SourceFile{
+		files = append(files, types.SourceFile{
 			Path:     path,
 			Content:  data,
 			Ext:      ext,
@@ -417,7 +468,7 @@ func main() {
 	extractor := NewRegexExtractor(cfg)
 	importRules := compileImportRules(cfg.ImportRules)
 
-	files, err := ScanDir("/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic")
+	files, err := ScanDir("/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app")
 	if err != nil {
 		log.Fatal(err)
 	}

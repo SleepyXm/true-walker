@@ -87,11 +87,11 @@ import_rules:
 
   # extended to [\w\.,\s]+ to catch: import os, sys, re
   - name: py-import
-    pattern: '^import\s+(?P<import>[\w\.,\s]+)'
+    pattern: '^import\s+(?P<imports>.+)'
     language: .py
 
   - name: py-from-import
-    pattern: '^from\s+(?P<import>[\w\.]+)\s+import'
+    pattern: '^from\s+(?P<module>[\w\.]+)\s+import\s+(?P<names>.+)'
     language: .py
 
   - name: js-import
