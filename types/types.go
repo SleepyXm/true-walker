@@ -63,17 +63,42 @@ type ImportRuleDef struct {
 	Language string `yaml:"language"`
 }
 
+type UsageSite struct {
+	Line     int
+	Function string
+}
+
 type Import struct {
 	Path   string
-	Alias  string           // "import x as y" → y
-	Names  []string         // "from x import A, B" or "import { A, B } from x"
-	Usages map[string][]int // name → line numbers
+	Alias  string                 // "import x as y" → y
+	Names  []string               // "from x import A, B" or "import { A, B } from x"
+	Usages map[string][]UsageSite // name → line numbers
 }
 
 type Config struct {
-	Name         string          `yaml:"name"`
-	RouteMethods []string        `yaml:"route_methods"`
-	Rules        []RuleDef       `yaml:"route_rules"`
-	PrefixRules  []PrefixRuleDef `yaml:"prefix_rules"`
-	ImportRules  []ImportRuleDef `yaml:"import_rules"`
+	Name          string            `yaml:"name"`
+	RouteMethods  []string          `yaml:"route_methods"`
+	Rules         []RuleDef         `yaml:"route_rules"`
+	PrefixRules   []PrefixRuleDef   `yaml:"prefix_rules"`
+	ImportRules   []ImportRuleDef   `yaml:"import_rules"`
+	FunctionRules []FunctionRuleDef `yaml:"function_rules"`
+}
+
+// New types:
+
+type FunctionRuleDef struct {
+	Name     string `yaml:"name"`
+	Pattern  string `yaml:"pattern"`
+	Language string `yaml:"language"`
+}
+
+type FunctionRule struct {
+	Re       *regexp.Regexp
+	NameIdx  int
+	Language string
+}
+
+type FunctionDef struct {
+	Name      string
+	StartLine int
 }

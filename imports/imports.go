@@ -39,7 +39,7 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 
 	add := func(path, name, alias string) {
 		if _, ok := byPath[path]; !ok {
-			byPath[path] = &types.Import{Path: path, Usages: make(map[string][]int)}
+			byPath[path] = &types.Import{Path: path, Usages: make(map[string][]types.UsageSite)}
 			order = append(order, path)
 		}
 		imp := byPath[path]
@@ -109,19 +109,53 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 	return out
 }
 
-func Resolve(f types.SourceFile, imps []types.Import) []types.Import {
+func Resolve(f types.SourceFile, imps []types.Import, fns []types.FunctionDef) []types.Import {
 	for i, imp := range imps {
 		if imp.Alias != "" {
-			imps[i].Usages[imp.Alias] = findUsages(f.Content, imp.Alias)
+			imps[i].Usages[imp.Alias] = findUsages(f.Content, imp.Alias, fns)
 		}
 		for _, name := range imp.Names {
-			imps[i].Usages[name] = findUsages(f.Content, name)
+			imps[i].Usages[name] = findUsages(f.Content, name, fns)
 		}
 		if imp.Alias == "" && len(imp.Names) == 0 {
-			imps[i].Usages[imp.Path] = findUsages(f.Content, imp.Path)
+			imps[i].Usages[imp.Path] = findUsages(f.Content, imp.Path, fns)
 		}
 	}
 	return imps
+}
+
+func findUsages(content []byte, ident string, fns []types.FunctionDef) []types.UsageSite {
+	if ident == "" {
+		return nil
+	}
+	re, err := regexp.Compile(`\b` + regexp.QuoteMeta(ident) + `\b`)
+	if err != nil {
+		return nil
+	}
+	var sites []types.UsageSite
+	sc := bufio.NewScanner(bytes.NewReader(content))
+	lineNum := 0
+	for sc.Scan() {
+		lineNum++
+		if re.MatchString(sc.Text()) {
+			sites = append(sites, types.UsageSite{
+				Line:     lineNum,
+				Function: containing(fns, lineNum),
+			})
+		}
+	}
+	return sites
+}
+
+func containing(fns []types.FunctionDef, line int) string {
+	name := ""
+	for _, d := range fns {
+		if d.StartLine > line {
+			break
+		}
+		name = d.Name
+	}
+	return name
 }
 
 // parseAlias splits "pandas as pd" → ("pandas", "pd"), or "pandas" → ("pandas", "").
@@ -147,8 +181,8 @@ func resolveIdent(path, alias string) string {
 	return path
 }
 
-// findUsages scans content for lines where ident appears as a word.
-func findUsages(content []byte, ident string) []int {
+// findUsageLines scans content for lines where ident appears as a word.
+func findUsageLines(content []byte, ident string) []int {
 	if ident == "" {
 		return nil
 	}

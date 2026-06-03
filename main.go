@@ -5,18 +5,32 @@ import (
 	"log"
 	"strings"
 	"tree-sit/test/config"
+	"tree-sit/test/functions"
 	"tree-sit/test/imports"
 	"tree-sit/test/routes"
 	"tree-sit/test/scanner"
+	"tree-sit/test/types"
 )
 
 const (
 	configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml"
-	targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
+	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/full-stack-fastapi-template-master"
-	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app"
+	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app"
 )
+
+func fmtSites(sites []types.UsageSite) string {
+	parts := make([]string, len(sites))
+	for i, s := range sites {
+		if s.Function != "" {
+			parts[i] = fmt.Sprintf("%d(%s)", s.Line, s.Function)
+		} else {
+			parts[i] = fmt.Sprintf("%d", s.Line)
+		}
+	}
+	return "[" + strings.Join(parts, " ") + "]"
+}
 
 func lastSegment(path string) string {
 	path = strings.TrimRight(path, "/")
@@ -38,6 +52,7 @@ func main() {
 
 	routeExtractor := routes.NewExtractor(cfg)
 	importRules := imports.CompileRules(cfg.ImportRules)
+	functionRules := functions.CompileRules(cfg.FunctionRules)
 
 	files, err := scanner.ScanDir(targetDir)
 	if err != nil {
@@ -47,31 +62,41 @@ func main() {
 
 	for _, f := range files {
 		r := routeExtractor.Extract(f)
-		imps := imports.Extract(f, importRules)
-		imps = imports.Resolve(f, imps)
 		if len(r) == 0 {
 			continue
 		}
+
+		fns := functions.Extract(f, functionRules)
+		imps := imports.Resolve(f, imports.Extract(f, importRules), fns)
+
 		fmt.Println("\n===", f.Path)
+
 		for _, imp := range imps {
 			if imp.Alias != "" {
-				fmt.Printf("  %s (as %s) — lines %v\n", imp.Path, imp.Alias, imp.Usages[imp.Alias])
+				fmt.Printf("  %s (as %s) — %s\n", imp.Path, imp.Alias, fmtSites(imp.Usages[imp.Alias]))
 			} else if len(imp.Names) > 0 {
 				fmt.Printf("  %s\n", imp.Path)
 				for _, name := range imp.Names {
-					fmt.Printf("    .%s — lines %v\n", name, imp.Usages[name])
+					fmt.Printf("    .%s — %s\n", name, fmtSites(imp.Usages[name]))
 				}
 			} else {
-				if lines := imp.Usages[imp.Path]; len(lines) > 0 {
-					fmt.Printf("  %s — lines %v\n", imp.Path, lines)
+				if sites := imp.Usages[imp.Path]; len(sites) > 0 {
+					fmt.Printf("  %s — %s\n", imp.Path, fmtSites(sites))
 				} else {
 					fmt.Printf("  %s\n", imp.Path)
 				}
 			}
 		}
+
 		for _, route := range r {
-			fmt.Printf("  [%s] %s  (line %d)\n",
-				route.Data["method"], route.Data["path"], route.StartLine)
+			fn := functions.Containing(fns, route.StartLine)
+			if fn != "" {
+				fmt.Printf("  [%s] %s  (line %d, in %s)\n",
+					route.Data["method"], route.Data["path"], route.StartLine, fn)
+			} else {
+				fmt.Printf("  [%s] %s  (line %d)\n",
+					route.Data["method"], route.Data["path"], route.StartLine)
+			}
 		}
 	}
 }
