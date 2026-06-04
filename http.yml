@@ -150,6 +150,7 @@ import_rules:
     pattern: '^using\s+(?P<import>[\w\.]+)'
     language: .cs
 
+# ── Function Rules ──────────────────────────────────────────────────────────────
 
 function_rules:
   - name: go-function
@@ -179,6 +180,7 @@ function_rules:
     pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
     language: .cpp
 
+# ── Loop Rules ──────────────────────────────────────────────────────────────
 
 loop_rules:
   - name: for-loop
@@ -192,6 +194,7 @@ loop_rules:
   - name: go-loops
     pattern: '(?P<loop>for|range)\s+.*\s*{'
 
+# ── Assignment Rules ──────────────────────────────────────────────────────────────
 
 assignment_rules:
   - name: variable-assignment
@@ -199,6 +202,127 @@ assignment_rules:
   - name: go-short-variable-declaration
     pattern: '(?P<var>\w+)\s*:=\s*.*'
 
+# ── Param Rules ──────────────────────────────────────────────────────────────
+
 parameter_rules:
   - name: function-parameters
     pattern: '\((?P<params>[^)]*)\)'
+
+# ── Class / Type Rules ──────────────────────────────────────────────────────────────
+
+class_rules:
+  - name: py-class
+    pattern: '^class\s+(?P<class>\w+)\s*(?:\((?P<bases>[^)]*)\))?:'
+    language: .py
+
+  - name: ts-interface
+    pattern: '(?:export\s+)?interface\s+(?P<class>\w+)\s*(?:extends\s+(?P<bases>[\w,\s]+))?\s*\{'
+    language: .ts
+
+  - name: ts-type-alias
+    pattern: '(?:export\s+)?type\s+(?P<class>\w+)\s*=\s*\{'
+    language: .ts
+
+  - name: ts-class
+    pattern: '(?:export\s+)?(?:abstract\s+)?class\s+(?P<class>\w+)(?:\s+extends\s+(?P<base>\w+))?'
+    language: .ts
+
+  - name: tsx-interface
+    pattern: '(?:export\s+)?interface\s+(?P<class>\w+)\s*(?:extends\s+(?P<bases>[\w,\s]+))?\s*\{'
+    language: .tsx
+
+  - name: go-struct
+    pattern: 'type\s+(?P<class>\w+)\s+struct\s*\{'
+    language: .go
+
+  - name: go-interface
+    pattern: 'type\s+(?P<class>\w+)\s+interface\s*\{'
+    language: .go
+
+  - name: rs-struct
+    pattern: '(?:pub\s+)?struct\s+(?P<class>\w+)'
+    language: .rs
+
+  - name: rs-enum
+    pattern: '(?:pub\s+)?enum\s+(?P<class>\w+)'
+    language: .rs
+
+  - name: java-class
+    pattern: '(?:public|private|protected)?\s*(?:abstract\s+)?class\s+(?P<class>\w+)(?:\s+extends\s+(?P<base>\w+))?'
+    language: .java
+
+  - name: java-interface
+    pattern: '(?:public|private|protected)?\s*interface\s+(?P<class>\w+)'
+    language: .java
+
+  - name: kt-class
+    pattern: '(?:data\s+)?class\s+(?P<class>\w+)(?:\s*\((?P<fields>[^)]*)\))?'
+    language: .kt
+
+  - name: csharp-class
+    pattern: '(?:public|private|protected|internal)?\s*(?:abstract\s+)?(?:class|record|struct)\s+(?P<class>\w+)(?:\s*:\s*(?P<bases>[\w,\s]+))?'
+    language: .cs
+
+  - name: php-class
+    pattern: 'class\s+(?P<class>\w+)(?:\s+extends\s+(?P<base>\w+))?'
+    language: .php
+
+  - name: rb-class
+    pattern: 'class\s+(?P<class>\w+)(?:\s*<\s*(?P<base>\w+))?'
+    language: .rb
+
+# ── Field Rules ──────────────────────────────────────────────────────────────
+
+field_rules:
+  # Python typed field (Pydantic / dataclass)
+  - name: py-typed-field
+    pattern: '^\s+(?P<field>\w+)\s*:\s*(?P<type>[\w\[\],\s|]+?)(?:\s*=\s*(?P<default>.+))?$'
+    language: .py
+
+  # SQLAlchemy column
+  - name: py-column
+    pattern: '^\s+(?P<field>\w+)\s*=\s*(?:mapped_column|Column)\s*\((?P<args>[^)]+)\)'
+    language: .py
+
+  # TypeScript / interface / class property
+  - name: ts-field
+    pattern: '^\s+(?:readonly\s+)?(?P<field>\w+)\??\s*:\s*(?P<type>[^;=\n]+)'
+    language: .ts
+
+  - name: tsx-field
+    pattern: '^\s+(?:readonly\s+)?(?P<field>\w+)\??\s*:\s*(?P<type>[^;=\n]+)'
+    language: .tsx
+
+  # Go struct field
+  - name: go-field
+    pattern: '^\s+(?P<field>\w+)\s+(?P<type>[\w\*\[\]]+)(?:\s+`(?P<tag>[^`]+)`)?'
+    language: .go
+
+  # Rust struct field
+  - name: rs-field
+    pattern: '^\s+(?:pub\s+)?(?P<field>\w+)\s*:\s*(?P<type>[\w<>\[\],\s&]+)'
+    language: .rs
+
+  # Java / Kotlin field
+  - name: java-field
+    pattern: '^\s+(?:private|public|protected)?\s*(?:final\s+)?(?P<type>[\w<>]+)\s+(?P<field>\w+)'
+    language: .java
+
+  - name: kt-field
+    pattern: '^\s+(?:val|var)\s+(?P<field>\w+)\s*:\s*(?P<type>[\w<>?]+)'
+    language: .kt
+
+  # C# property
+  - name: csharp-field
+    pattern: '^\s+(?:public|private|protected)?\s*(?P<type>[\w<>?]+)\s+(?P<field>\w+)\s*\{'
+    language: .cs
+
+  # PHP property
+  - name: php-field
+    pattern: '^\s+(?:public|private|protected)?\s*\$(?P<field>\w+)'
+    language: .php
+
+  # Ruby attr_accessor / attr_reader
+  - name: rb-attr
+    pattern: '^\s+attr_(?:accessor|reader|writer)\s+:(?P<field>\w+)'
+    language: .rb

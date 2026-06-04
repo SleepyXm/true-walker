@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"tree-sit/test/classes"
 	"tree-sit/test/config"
 	"tree-sit/test/functions"
 	"tree-sit/test/imports"
@@ -16,8 +17,8 @@ const (
 	configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
-	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/full-stack-fastapi-template-master"
-	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app"
+	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
+	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app/backend"
 )
 
 func fmtSites(sites []types.UsageSite) string {
@@ -62,6 +63,8 @@ func main() {
 	routeExtractor := routes.NewExtractor(cfg)
 	importRules := imports.CompileRules(cfg.ImportRules)
 	functionRules := functions.CompileRules(cfg.FunctionRules)
+	classRules := classes.CompileClassRules(cfg.ClassRules)
+	fieldRules := classes.CompileFieldRules(cfg.FieldRules)
 
 	files, err := scanner.ScanDir(targetDir)
 	if err != nil {
@@ -70,13 +73,15 @@ func main() {
 	fmt.Printf("found %d files\n", len(files))
 
 	for _, f := range files {
-		r := routeExtractor.Extract(f)
-		if len(r) == 0 {
-			continue
-		}
-
 		fns := functions.Extract(f, functionRules)
 		imps := imports.Resolve(f, imports.Extract(f, importRules), fns)
+		classes := classes.Extract(f, classRules, fieldRules)
+		r := routeExtractor.Extract(f)
+
+		// skip files with nothing interesting
+		if len(fns) == 0 && len(imps) == 0 && len(classes) == 0 && len(r) == 0 {
+			continue
+		}
 
 		fmt.Println("\n===", f.Path)
 
@@ -113,6 +118,11 @@ func main() {
 				fmt.Printf("  [%s] %s  (line %d)\n",
 					route.Data["method"], route.Data["path"], route.StartLine)
 			}
+		}
+
+		// classes
+		for _, class := range classes {
+			fmt.Printf("  class %s  (line %d)\n", class.Name, class.StartLine)
 		}
 	}
 }

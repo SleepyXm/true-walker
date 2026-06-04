@@ -82,6 +82,8 @@ type Config struct {
 	PrefixRules   []PrefixRuleDef   `yaml:"prefix_rules"`
 	ImportRules   []ImportRuleDef   `yaml:"import_rules"`
 	FunctionRules []FunctionRuleDef `yaml:"function_rules"`
+	ClassRules    []ClassRuleDef    `yaml:"class_rules"`
+	FieldRules    []FieldRuleDef    `yaml:"field_rules"`
 }
 
 // ------ Paramteters ----- //
@@ -112,4 +114,49 @@ type FunctionDef struct {
 	EndLine   int // end of param list, not body
 	Params    []Param
 	RawParams string
+}
+
+// Class Types
+
+type ClassDef struct {
+	Name      string
+	Bases     []string
+	StartLine int
+	EndLine   int
+	Fields    []FieldDef
+}
+
+type FieldDef struct {
+	Name    string
+	Type    string
+	Tag     string // Go struct tags
+	Default string
+}
+
+type ClassRuleDef struct {
+	Name     string `yaml:"name"`
+	Pattern  string `yaml:"pattern"`
+	Language string `yaml:"language"`
+}
+
+type ClassRule struct {
+	Re       *regexp.Regexp
+	NameIdx  int
+	BasesIdx int
+	Language string
+}
+
+type FieldRuleDef struct {
+	Name     string `yaml:"name"`
+	Pattern  string `yaml:"pattern"`
+	Language string `yaml:"language"`
+}
+
+type FieldRule struct {
+	Re         *regexp.Regexp
+	NameIdx    int
+	TypeIdx    int
+	TagIdx     int
+	DefaultIdx int
+	Language   string
 }
