@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"tree-sit/test/classes"
 	"tree-sit/test/config"
@@ -50,6 +52,14 @@ func fmtParams(params []types.Param) string {
 	return "(" + strings.Join(parts, ", ") + ")"
 }
 
+type FileSnapshot struct {
+	Path      string              `json:"path"`
+	Functions []types.FunctionDef `json:"functions"`
+	Imports   []types.Import      `json:"imports"`
+	Classes   []types.ClassDef    `json:"classes"`
+	Routes    []types.Primitive   `json:"routes"`
+}
+
 func main() {
 	cfg, err := config.Load(configPath)
 	if err != nil {
@@ -72,25 +82,23 @@ func main() {
 	}
 	fmt.Printf("found %d files\n", len(files))
 
+	var snapshots []FileSnapshot
+
 	for _, f := range files {
 		fns := functions.Extract(f, functionRules)
 		imps := imports.Resolve(f, imports.Extract(f, importRules), fns)
 		classes := classes.Extract(f, classRules, fieldRules)
-		r := routeExtractor.Extract(f)
+		routes := routeExtractor.Extract(f)
 
-		// skip files with nothing interesting
-		if len(fns) == 0 && len(imps) == 0 && len(classes) == 0 && len(r) == 0 {
+		if len(fns) == 0 && len(imps) == 0 && len(classes) == 0 && len(routes) == 0 {
 			continue
 		}
 
+		// Original printing logic
 		fmt.Println("\n===", f.Path)
-
-		// functions
 		for _, fn := range fns {
 			fmt.Printf("  fn %s %s  (line %d)\n", fn.Name, fmtParams(fn.Params), fn.StartLine)
 		}
-
-		// imports
 		for _, imp := range imps {
 			if imp.Alias != "" {
 				fmt.Printf("  %s (as %s) — %s\n", imp.Path, imp.Alias, fmtSites(imp.Usages[imp.Alias]))
@@ -107,9 +115,7 @@ func main() {
 				}
 			}
 		}
-
-		// routes
-		for _, route := range r {
+		for _, route := range routes {
 			fn := functions.Containing(fns, route.StartLine)
 			if fn != "" {
 				fmt.Printf("  [%s] %s  (line %d, in %s)\n",
@@ -119,10 +125,30 @@ func main() {
 					route.Data["method"], route.Data["path"], route.StartLine)
 			}
 		}
-
-		// classes
 		for _, class := range classes {
 			fmt.Printf("  class %s  (line %d)\n", class.Name, class.StartLine)
 		}
+
+		// Collect for JSON
+		snapshots = append(snapshots, FileSnapshot{
+			Path:      f.Path,
+			Functions: fns,
+			Imports:   imps,
+			Classes:   classes,
+			Routes:    routes,
+		})
+	}
+
+	// Output JSON file
+	outFile, err := os.Create("output.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer outFile.Close()
+
+	enc := json.NewEncoder(outFile)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(snapshots); err != nil {
+		log.Fatal(err)
 	}
 }
