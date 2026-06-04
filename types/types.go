@@ -84,6 +84,14 @@ type Config struct {
 	FunctionRules []FunctionRuleDef `yaml:"function_rules"`
 }
 
+// ------ Paramteters ----- //
+
+type Param struct {
+	Name string
+	Type string
+	Raw  string // kept when parse is ambiguous
+}
+
 // New types:
 
 type FunctionRuleDef struct {
@@ -101,4 +109,7 @@ type FunctionRule struct {
 type FunctionDef struct {
 	Name      string
 	StartLine int
+	EndLine   int // end of param list, not body
+	Params    []Param
+	RawParams string
 }

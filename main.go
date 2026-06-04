@@ -32,12 +32,21 @@ func fmtSites(sites []types.UsageSite) string {
 	return "[" + strings.Join(parts, " ") + "]"
 }
 
-func lastSegment(path string) string {
-	path = strings.TrimRight(path, "/")
-	if i := strings.LastIndexAny(path, "/.@-"); i >= 0 {
-		return path[i+1:]
+func fmtParams(params []types.Param) string {
+	if len(params) == 0 {
+		return "()"
 	}
-	return path
+	parts := make([]string, len(params))
+	for i, p := range params {
+		if p.Type != "" {
+			parts[i] = p.Name + ": " + p.Type
+		} else if p.Name != "" {
+			parts[i] = p.Name
+		} else {
+			parts[i] = p.Raw
+		}
+	}
+	return "(" + strings.Join(parts, ", ") + ")"
 }
 
 func main() {
@@ -71,6 +80,12 @@ func main() {
 
 		fmt.Println("\n===", f.Path)
 
+		// functions
+		for _, fn := range fns {
+			fmt.Printf("  fn %s %s  (line %d)\n", fn.Name, fmtParams(fn.Params), fn.StartLine)
+		}
+
+		// imports
 		for _, imp := range imps {
 			if imp.Alias != "" {
 				fmt.Printf("  %s (as %s) — %s\n", imp.Path, imp.Alias, fmtSites(imp.Usages[imp.Alias]))
@@ -88,6 +103,7 @@ func main() {
 			}
 		}
 
+		// routes
 		for _, route := range r {
 			fn := functions.Containing(fns, route.StartLine)
 			if fn != "" {
