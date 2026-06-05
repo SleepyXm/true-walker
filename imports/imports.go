@@ -118,7 +118,8 @@ func Resolve(f types.SourceFile, imps []types.Import, fns []types.FunctionDef) [
 			imps[i].Usages[name] = findUsages(f.Content, name, fns)
 		}
 		if imp.Alias == "" && len(imp.Names) == 0 {
-			imps[i].Usages[imp.Path] = findUsages(f.Content, imp.Path, fns)
+			ident := resolveIdent(imp.Path, "")
+			imps[i].Usages[imp.Path] = findUsages(f.Content, ident, fns)
 		}
 	}
 	return imps
@@ -175,10 +176,24 @@ func resolveIdent(path, alias string) string {
 		return alias
 	}
 	path = strings.TrimRight(path, "/")
-	if i := strings.LastIndexAny(path, "/.@-"); i >= 0 {
-		return path[i+1:]
+	parts := strings.FieldsFunc(path, func(r rune) bool {
+		return r == '/' || r == '.' || r == '@'
+	})
+	if len(parts) == 0 {
+		return path
 	}
-	return path
+	for len(parts) > 1 {
+		if matched, _ := regexp.MatchString(`^v\d+$`, parts[len(parts)-1]); matched {
+			parts = parts[:len(parts)-1]
+		} else {
+			break
+		}
+	}
+	last := parts[len(parts)-1]
+	if idx := strings.LastIndex(last, "-"); idx != -1 {
+		last = last[idx+1:]
+	}
+	return last
 }
 
 // findUsageLines scans content for lines where ident appears as a word.

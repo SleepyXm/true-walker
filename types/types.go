@@ -119,11 +119,12 @@ type FunctionDef struct {
 // Class Types
 
 type ClassDef struct {
-	Name      string
-	Bases     []string
-	StartLine int
-	EndLine   int
-	Fields    []FieldDef
+	Name      string            `json:"name"`
+	Bases     []string          `json:"bases,omitempty"`
+	StartLine int               `json:"startLine"`
+	EndLine   int               `json:"endLine"`
+	Fields    []FieldDef        `json:"fields,omitempty"`
+	Data      map[string]string `json:"data,omitempty"`
 }
 
 type FieldDef struct {
