@@ -128,10 +128,10 @@ type ClassDef struct {
 }
 
 type FieldDef struct {
-	Name    string
-	Type    string
-	Tag     string // Go struct tags
-	Default string
+	Name    string `json:"name"`
+	Type    string `json:"type,omitempty"`
+	Tag     string `json:"tag,omitempty"` // Go struct tags
+	Default string `json:"default,omitempty"`
 }
 
 type ClassRuleDef struct {

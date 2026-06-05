@@ -275,8 +275,12 @@ class_rules:
 
 field_rules:
   # Python typed field (Pydantic / dataclass)
-  - name: py-typed-field
-    pattern: '^\s+(?P<field>\w+)\s*:\s*(?P<type>[\w\[\],\s|]+?)(?:\s*=\s*(?P<default>.+))?$'
+  - name: python_type_annotation
+    pattern: '^(?P<field>[a-zA-Z_]\w*)\s*:\s*(?P<type>[^=\n]+?)(?:\s*=\s*(?P<default>.+))?$'
+    language: .py
+  
+  - name: python_type_annotation
+    pattern: '^(?P<field>[a-zA-Z_]\w*)\s*:\s*(?P<type>[^=\n]+?)(?:\s*=\s*(?P<default>.+))?$'
     language: .py
 
   # SQLAlchemy column

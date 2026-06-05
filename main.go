@@ -35,6 +35,27 @@ func fmtSites(sites []types.UsageSite) string {
 	return "[" + strings.Join(parts, " ") + "]"
 }
 
+func fmtBases(bases []string) string {
+	if len(bases) == 0 {
+		return ""
+	}
+	return " [" + strings.Join(bases, ", ") + "]"
+}
+
+func fmtField(f types.FieldDef) string {
+	s := "." + f.Name
+	if f.Type != "" {
+		s += ": " + f.Type
+	}
+	if f.Default != "" {
+		s += " = " + f.Default
+	}
+	if f.Tag != "" {
+		s += " `" + f.Tag + "`"
+	}
+	return s
+}
+
 func fmtParams(params []types.Param) string {
 	if len(params) == 0 {
 		return "()"
@@ -87,18 +108,31 @@ func main() {
 	for _, f := range files {
 		fns := functions.Extract(f, functionRules)
 		imps := imports.Resolve(f, imports.Extract(f, importRules), fns)
-		classes := classes.Extract(f, classRules, fieldRules)
-		routes := routeExtractor.Extract(f)
+		cls := classes.Extract(f, classRules, fieldRules)
+		rts := routeExtractor.Extract(f)
 
-		if len(fns) == 0 && len(imps) == 0 && len(classes) == 0 && len(routes) == 0 {
+		if len(fns) == 0 && len(imps) == 0 && len(cls) == 0 && len(rts) == 0 {
 			continue
 		}
 
-		// Original printing logic
-		fmt.Println("\n===", f.Path)
-		for _, fn := range fns {
-			fmt.Printf("  fn %s %s  (line %d)\n", fn.Name, fmtParams(fn.Params), fn.StartLine)
+		// Build classOf first so the function loop can filter methods out
+		classOf := make(map[int]string) // fn.StartLine → class.Name
+		for _, class := range cls {
+			for _, fn := range fns {
+				if fn.StartLine > class.StartLine && fn.StartLine <= class.EndLine {
+					classOf[fn.StartLine] = class.Name
+				}
+			}
 		}
+
+		fmt.Println("\n===", f.Path)
+
+		for _, fn := range fns {
+			if classOf[fn.StartLine] == "" {
+				fmt.Printf("  fn %s %s  (line %d)\n", fn.Name, fmtParams(fn.Params), fn.StartLine)
+			}
+		}
+
 		for _, imp := range imps {
 			if imp.Alias != "" {
 				fmt.Printf("  %s (as %s) — %s\n", imp.Path, imp.Alias, fmtSites(imp.Usages[imp.Alias]))
@@ -115,7 +149,8 @@ func main() {
 				}
 			}
 		}
-		for _, route := range routes {
+
+		for _, route := range rts {
 			fn := functions.Containing(fns, route.StartLine)
 			if fn != "" {
 				fmt.Printf("  [%s] %s  (line %d, in %s)\n",
@@ -125,21 +160,29 @@ func main() {
 					route.Data["method"], route.Data["path"], route.StartLine)
 			}
 		}
-		for _, class := range classes {
-			fmt.Printf("  class %s  (line %d)\n", class.Name, class.StartLine)
+
+		for _, class := range cls {
+			fmt.Printf("  class %s%s  (line %d-%d)\n",
+				class.Name, fmtBases(class.Bases), class.StartLine, class.EndLine)
+			for _, fn := range fns {
+				if classOf[fn.StartLine] == class.Name {
+					fmt.Printf("    fn %s %s  (line %d)\n", fn.Name, fmtParams(fn.Params), fn.StartLine)
+				}
+			}
+			for _, field := range class.Fields {
+				fmt.Printf("    %s\n", fmtField(field))
+			}
 		}
 
-		// Collect for JSON
 		snapshots = append(snapshots, FileSnapshot{
 			Path:      f.Path,
 			Functions: fns,
 			Imports:   imps,
-			Classes:   classes,
-			Routes:    routes,
+			Classes:   cls,
+			Routes:    rts,
 		})
 	}
 
-	// Output JSON file
 	outFile, err := os.Create("output.json")
 	if err != nil {
 		log.Fatal(err)
