@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>code/index</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:    #0d0d0f;
+  --surf:  #141417;
+  --bd:    rgba(255,255,255,.07);
+  --bd2:   rgba(255,255,255,.13);
+  --tx:    #e2e2e2;
+  --mt:    #666;
+  --dm:    #3a3a3a;
+  --acc:   #c8f060;
+  --fn:    #7dd3fc;  --fn-bg: rgba(125,211,252,.09);
+  --im:    #c8f060;  --im-bg: rgba(200,240,96,.09);
+  --cl:    #fbbf24;  --cl-bg: rgba(251,191,36,.09);
+  --rt:    #34d399;  --rt-bg: rgba(52,211,153,.09);
+  --fl:    #94a3b8;  --fl-bg: rgba(148,163,184,.07);
+  --pr:    #c4b5fd;
+  --mono:  'JetBrains Mono', monospace;
+  --sans:  'DM Sans', sans-serif;
+  --r:     8px;
+}
+
+body { background: var(--bg); color: var(--tx); font-family: var(--sans); min-height: 100vh; padding: 2.5rem 1.5rem; }
+.wrap { max-width: 900px; margin: 0 auto; }
+
+/* ── header ── */
+.hdr { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+.logo { font-family: var(--mono); font-size: 17px; font-weight: 500; color: var(--acc); letter-spacing: -.02em; }
+.logo s { color: var(--mt); text-decoration: none; }
+.hstat { font: 12px/1 var(--mono); color: var(--mt); flex: 1; }
+.loadbtn { font: 11px var(--sans); padding: 5px 12px; border-radius: 6px; border: 1px solid var(--bd); color: var(--mt); cursor: pointer; background: none; transition: .15s all; }
+.loadbtn:hover { border-color: var(--bd2); color: var(--tx); }
+
+/* ── search ── */
+.sbox { position: relative; margin-bottom: 12px; }
+.sico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--mt); pointer-events: none; }
+#sq { width: 100%; background: var(--surf); border: 1px solid var(--bd); border-radius: var(--r); padding: 10px 13px 10px 38px; font: 13px var(--mono); color: var(--tx); outline: none; transition: border-color .15s; }
+#sq:focus { border-color: var(--bd2); }
+#sq::placeholder { color: var(--mt); }
+
+/* ── chips ── */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.chip { font: 11px var(--sans); padding: 4px 11px; border-radius: 99px; border: 1px solid var(--bd); background: none; color: var(--mt); cursor: pointer; transition: .12s all; }
+.chip:hover { border-color: var(--bd2); color: var(--tx); }
+.chip.on { background: var(--im-bg); border-color: rgba(200,240,96,.3); color: var(--acc); }
+
+/* ── meta ── */
+.meta { font: 11px var(--mono); color: var(--mt); margin-bottom: 14px; min-height: 16px; }
+
+/* ── file list ── */
+.flist { display: flex; flex-direction: column; gap: 6px; }
+
+/* ── file card ── */
+.fc { background: var(--surf); border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; transition: border-color .12s; }
+.fc:hover { border-color: var(--bd2); }
+
+.fhead { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--bd); }
+.fc.closed .fhead { border-bottom-color: transparent; }
+.fc.closed .fbody { display: none; }
+.fc.closed .chev { transform: rotate(-90deg); }
+
+.finfo { flex: 1; min-width: 0; }
+.fname { font: 500 13px var(--mono); color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fpath { font-size: 11px; color: var(--mt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.fcnt { font: 11px var(--mono); color: var(--dm); flex-shrink: 0; white-space: nowrap; }
+.chev { color: var(--mt); font-size: 11px; flex-shrink: 0; transition: transform .15s; }
+
+/* ── sections ── */
+.sec { border-bottom: 1px solid var(--bd); }
+.sec:last-child { border-bottom: none; }
+.slbl { font: 600 10px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--mt); padding: 8px 14px 3px; }
+
+/* ── rows ── */
+.row { display: flex; align-items: baseline; gap: 8px; padding: 4px 14px; transition: background .1s; }
+.row:hover { background: rgba(255,255,255,.02); }
+.row.i1 { padding-left: 30px; }
+.row.i2 { padding-left: 46px; }
+
+/* ── badges ── */
+.b { font: 600 9px var(--sans); letter-spacing: .05em; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; text-transform: uppercase; }
+.bfn { background: var(--fn-bg); color: var(--fn); }
+.bim { background: var(--im-bg); color: var(--im); }
+.bcl { background: var(--cl-bg); color: var(--cl); }
+.bfl { background: var(--fl-bg); color: var(--fl); }
+.brt { background: var(--rt-bg); color: var(--rt); }
+
+/* ── row content ── */
+.sym { font: 12px var(--mono); color: var(--tx); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.det { font: 11px var(--mono); color: #888; flex-shrink: 0; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln  { font: 10px var(--mono); color: var(--dm); flex-shrink: 0; }
+
+/* ── uses sub-row ── */
+.uses { font: 11px var(--mono); color: var(--mt); padding: 1px 14px 4px 44px; }
+.uses.i1 { padding-left: 60px; }
+.uses em { font-style: normal; color: var(--im); opacity: .85; }
+
+mark { background: rgba(200,240,96,.18); color: var(--acc); border-radius: 2px; padding: 0 1px; }
+
+.empty, .init { text-align: center; padding: 4rem 0; font-size: 13px; color: var(--mt); }
+.init a { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.err { color: #f87171; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: var(--r); padding: 14px 16px; font: 13px var(--mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div class="logo">code<s>/</s>index</div>
+    <div class="hstat" id="hstat">no index loaded</div>
+    <label class="loadbtn" for="fi">load json</label>
+    <input type="file" id="fi" accept=".json" hidden/>
+  </div>
+
+  <div class="sbox">
+    <svg class="sico" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input id="sq" type="text" placeholder="Search files, functions, classes, imports…" autocomplete="off"/>
+  </div>
+
+  <div class="chips" id="chips">
+    <button class="chip on" data-f="all">All</button>
+    <button class="chip" data-f="functions">Functions</button>
+    <button class="chip" data-f="classes">Classes</button>
+    <button class="chip" data-f="imports">Imports</button>
+    <button class="chip" data-f="routes">Routes</button>
+  </div>
+
+  <div class="meta" id="meta"></div>
+  <div class="flist" id="flist">
+    <div class="init"><a href="#" onclick="document.getElementById('fi').click();return false">Load output.json</a> to explore your codebase</div>
+  </div>
+</div>
+
+<script>
+// ── state ──────────────────────────────────────────────────────────────────────
+let files = [];
+let activeFilter = 'all';
+
+// ── helpers ────────────────────────────────────────────────────────────────────
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function hl(text, q) {
+  if (!q || text == null) return esc(text ?? '');
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return esc(String(text)).replace(re, '<mark>$1</mark>');
+}
+
+const lc = s => (s ?? '').toLowerCase();
+const has = (s, q) => !q || lc(s).includes(lc(q));
+const base = p => p.split('/').pop() || p;
+
+// ── parse file snapshot ────────────────────────────────────────────────────────
+function parseFile(raw) {
+  const path = raw.path ?? '';
+  const fns  = raw.functions ?? [];
+  const imps = raw.imports   ?? [];
+  const cls  = raw.classes   ?? [];
+  const rts  = raw.routes    ?? [];
+
+  // fn.StartLine → class.name  (FunctionDef uses PascalCase, ClassDef uses camelCase due to tags)
+  const classOf = {};
+  for (const c of cls) {
+    for (const fn of fns) {
+      if (fn.StartLine > c.startLine && fn.StartLine <= c.endLine) {
+        classOf[fn.StartLine] = c.name;
+      }
+    }
+  }
+
+  // fn.Name → [{importPath, sym}]  — built from import Usages map
+  const fnUses = {};
+  for (const imp of imps) {
+    const ip     = imp.Path  ?? '';
+    const alias  = imp.Alias ?? '';
+    const names  = imp.Names ?? [];
+    const usages = imp.Usages ?? {};
+    // Determine which keys to look up in Usages
+    const keys = alias ? [alias] : names.length ? names : [ip];
+    for (const sym of keys) {
+      for (const site of (usages[sym] ?? [])) {
+        if (!site.Function) continue;
+        (fnUses[site.Function] ??= []).push({ ip, sym });
+      }
+    }
+  }
+
+  return { path, fns, imps, cls, rts, classOf, fnUses };
+}
+
+// ── render helpers ─────────────────────────────────────────────────────────────
+function fmtParams(params) {
+  if (!params?.length) return '()';
+  return '(' + params.map(p => p.Type ? `${p.Name}: ${p.Type}` : p.Name || p.Raw).join(', ') + ')';
+}
+
+function renderUses(fnName, fnUses, indentClass = '') {
+  const uses = fnUses[fnName];
+  if (!uses?.length) return '';
+  const seen = new Set();
+  const refs = uses.filter(u => {
+    const k = u.ip + '·' + u.sym;
+    return seen.has(k) ? false : (seen.add(k), true);
+  });
+  return `<div class="uses ${indentClass}">uses: ${refs.map(u => `<em>${esc(u.ip)}.${esc(u.sym)}</em>`).join(' · ')}</div>`;
+}
+
+function renderFn(fn, q, indent, fnUses) {
+  const name = fn.Name ?? '';
+  const params = fmtParams(fn.Params);
+  const line = fn.StartLine;
+  return `
+    <div class="row ${indent}">
+      <span class="b bfn">fn</span>
+      <span class="sym">${hl(name, q)}</span>
+      <span class="det">${hl(params, q)}</span>
+      ${line ? `<span class="ln">L${line}</span>` : ''}
+    </div>
+    ${renderUses(name, fnUses, indent)}`;
+}
+
+// ── section renderers ──────────────────────────────────────────────────────────
+function secFunctions(fns, classOf, fnUses, q, pathMatch) {
+  const top = fns.filter(fn => !classOf[fn.StartLine]);
+  const visible = top.filter(fn =>
+    pathMatch || has(fn.Name, q) || (fn.Params ?? []).some(p => has(p.Name, q) || has(p.Type, q))
+  );
+  if (!visible.length) return '';
+  return `<div class="sec"><div class="slbl">Functions</div>
+    ${visible.map(fn => renderFn(fn, q, '', fnUses)).join('')}
+  </div>`;
+}
+
+function secClasses(cls, fns, classOf, fnUses, q, pathMatch) {
+  const visible = cls.filter(c =>
+    pathMatch || has(c.name, q) || (c.fields ?? []).some(f => has(f.name, q) || has(f.type, q))
+  );
+  if (!visible.length) return '';
+
+  const rows = visible.map(c => {
+    const bases = (c.bases ?? []).length ? ` <span style="color:var(--mt);font-size:11px">[${esc(c.bases.join(', '))}]</span>` : '';
+    const lineStr = c.startLine ? `L${c.startLine}${c.endLine ? '–' + c.endLine : ''}` : '';
+    const methods = fns.filter(fn => classOf[fn.StartLine] === c.name);
+
+    const methodRows = methods.map(fn => renderFn(fn, q, 'i1', fnUses)).join('');
+
+    const fieldRows = (c.fields ?? []).map(f => {
+      let detail = f.type || '';
+      if (f.default) detail += ` = ${f.default}`;
+      if (f.tag)     detail += ` \`${f.tag}\``;
+      return `<div class="row i1">
+        <span class="b bfl">field</span>
+        <span class="sym" style="color:var(--fl)">${hl(f.name, q)}</span>
+        ${detail ? `<span class="det" style="color:var(--pr)">${hl(detail, q)}</span>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="row">
+        <span class="b bcl">cls</span>
+        <span class="sym">${hl(c.name, q)}${bases}</span>
+        ${lineStr ? `<span class="ln">${lineStr}</span>` : ''}
+      </div>
+      ${methodRows}${fieldRows}`;
+  }).join('');
+
+  return `<div class="sec"><div class="slbl">Classes</div>${rows}</div>`;
+}
+
+function secImports(imps, q, pathMatch) {
+  const visible = imps.filter(imp =>
+    pathMatch || has(imp.Path, q) || has(imp.Alias, q) ||
+    (imp.Names ?? []).some(n => has(n, q))
+  );
+  if (!visible.length) return '';
+
+  const rows = visible.map(imp => {
+    const alias = imp.Alias ? `<span class="det">as ${esc(imp.Alias)}</span>` : '';
+    const nameRows = (imp.Names ?? []).map(name => {
+      const usages = (imp.Usages ?? {})[name] ?? [];
+      const fns = [...new Set(usages.map(u => u.Function).filter(Boolean))];
+      return `<div class="row i1">
+        <span class="b bim" style="visibility:hidden">·</span>
+        <span class="sym" style="color:var(--im)">${hl('.' + name, q)}</span>
+        ${fns.length ? `<span class="det">→ ${esc(fns.join(', '))}</span>` : ''}
+      </div>`;
+    }).join('');
+
+    // alias import: show which functions used it
+    let aliasUses = '';
+    if (imp.Alias) {
+      const usages = (imp.Usages ?? {})[imp.Alias] ?? [];
+      const fns = [...new Set(usages.map(u => u.Function).filter(Boolean))];
+      if (fns.length) aliasUses = `<span class="det">→ ${esc(fns.join(', '))}</span>`;
+    }
+
+    return `<div class="row">
+        <span class="b bim">imp</span>
+        <span class="sym">${hl(imp.Path, q)}</span>
+        ${alias}${aliasUses}
+      </div>${nameRows}`;
+  }).join('');
+
+  return `<div class="sec"><div class="slbl">Imports</div>${rows}</div>`;
+}
+
+function secRoutes(rts, q, pathMatch) {
+  const visible = rts.filter(rt => {
+    const d = rt.Data ?? {};
+    return pathMatch || has(d.path ?? d.Path, q) || has(d.method ?? d.Method, q);
+  });
+  if (!visible.length) return '';
+
+  const rows = visible.map(rt => {
+    const d = rt.Data ?? {};
+    const method = d.method ?? d.Method ?? '?';
+    const rtPath = d.path  ?? d.Path  ?? '';
+    const line = rt.StartLine;
+    return `<div class="row">
+      <span class="b brt">${esc(method)}</span>
+      <span class="sym">${hl(rtPath, q)}</span>
+      ${line ? `<span class="ln">L${line}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="sec"><div class="slbl">Routes</div>${rows}</div>`;
+}
+
+// ── render file card ───────────────────────────────────────────────────────────
+function renderFile(fd, q) {
+  const { path, fns, imps, cls, rts, classOf, fnUses } = fd;
+  const pm = has(path, q); // path match → bypass per-symbol filtering
+
+  const show = t => activeFilter === 'all' || activeFilter === t;
+
+  const fnSec  = show('functions') ? secFunctions(fns, classOf, fnUses, q, pm) : '';
+  const clsSec = show('classes')   ? secClasses(cls, fns, classOf, fnUses, q, pm) : '';
+  const impSec = show('imports')   ? secImports(imps, q, pm) : '';
+  const rtSec  = show('routes')    ? secRoutes(rts, q, pm)   : '';
+
+  const body = fnSec + clsSec + impSec + rtSec;
+  if (!body) return '';  // nothing to show for this file
+
+  const topFnCount = fns.filter(fn => !classOf[fn.StartLine]).length;
+  const counts = [
+    topFnCount && `${topFnCount} fn`,
+    cls.length && `${cls.length} cls`,
+    imps.length && `${imps.length} imp`,
+    rts.length && `${rts.length} route`,
+  ].filter(Boolean).join(' · ');
+
+  return `<div class="fc">
+    <div class="fhead" onclick="this.closest('.fc').classList.toggle('closed')">
+      <div class="finfo">
+        <div class="fname">${hl(base(path), q)}</div>
+        <div class="fpath">${hl(path, q)}</div>
+      </div>
+      <div class="fcnt">${counts}</div>
+      <div class="chev">▾</div>
+    </div>
+    <div class="fbody">${body}</div>
+  </div>`;
+}
+
+// ── main render ────────────────────────────────────────────────────────────────
+function render() {
+  const q  = document.getElementById('sq').value.trim();
+  const el = document.getElementById('flist');
+  const mt = document.getElementById('meta');
+  if (!files.length) return;
+
+  const cards = files.map(fd => renderFile(fd, q)).filter(Boolean);
+  mt.textContent = `${cards.length} file${cards.length !== 1 ? 's' : ''}${q ? ` matching "${q}"` : ''}`;
+
+  el.innerHTML = cards.length
+    ? cards.join('')
+    : `<div class="empty">No results${q ? ` for "${esc(q)}"` : ''}</div>`;
+}
+
+// ── events ─────────────────────────────────────────────────────────────────────
+document.getElementById('sq').addEventListener('input', render);
+
+document.getElementById('chips').addEventListener('click', e => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  document.querySelectorAll('.chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  activeFilter = btn.dataset.f;
+  render();
+});
+
+document.getElementById('fi').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const raw = JSON.parse(ev.target.result);
+      files = (Array.isArray(raw) ? raw : [raw]).map(parseFile);
+      const total = files.reduce((n, f) => n + f.fns.length + f.cls.length + f.imps.length + f.rts.length, 0);
+      document.getElementById('hstat').textContent =
+        `${files.length} file${files.length !== 1 ? 's' : ''} · ${total} symbols`;
+      render();
+    } catch (err) {
+      document.getElementById('flist').innerHTML = `<div class="err">Parse error: ${esc(err.message)}</div>`;
+    }
+  };
+  r.readAsText(file);
+});
+</script>
+</body>
+</html>
