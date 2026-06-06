@@ -6,12 +6,16 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// ------------------------- File Type ------------------------- //
+
 type SourceFile struct {
 	Path     string
 	Content  []byte
 	Ext      string
 	Language *sitter.Language
 }
+
+// ------------------------- Primitive Types ------------------------- //
 
 type Primitive struct {
 	Kind        string
@@ -84,9 +88,10 @@ type Config struct {
 	FunctionRules []FunctionRuleDef `yaml:"function_rules"`
 	ClassRules    []ClassRuleDef    `yaml:"class_rules"`
 	FieldRules    []FieldRuleDef    `yaml:"field_rules"`
+	ReturnRules   []ReturnRuleDef   `yaml:"return_rules"`
 }
 
-// ------ Paramteters ----- //
+// ------------------------- Paramteters Types ------------------------- //
 
 type Param struct {
 	Name string
@@ -114,6 +119,7 @@ type FunctionDef struct {
 	EndLine   int // end of param list, not body
 	Params    []Param
 	RawParams string
+	Returns   []ReturnDef `json:"returns,omitempty"`
 }
 
 // Class Types
@@ -160,4 +166,30 @@ type FieldRule struct {
 	TagIdx     int
 	DefaultIdx int
 	Language   string
+}
+
+// ------------------------- Return types ------------------------- //
+
+// ReturnRuleDef is the YAML-deserialised rule definition.
+type ReturnRuleDef struct {
+	Name     string `yaml:"name"`
+	Pattern  string `yaml:"pattern"`
+	Language string `yaml:"language"`
+}
+
+// ReturnRule is the compiled, ready-to-match form.
+type ReturnRule struct {
+	Re       *regexp.Regexp
+	Name     string
+	ValueIdx int
+	Language string
+}
+
+// ReturnDef is one classified return/throw/yield site.
+type ReturnDef struct {
+	Mechanism string `json:"mechanism"`       // "return" | "throw" | "panic" | "yield" | …
+	Shape     string `json:"shape"`           // "void" | "data" | "message" | "data+message" | …
+	Value     string `json:"value,omitempty"` // raw value text
+	Line      int    `json:"line"`
+	Function  string `json:"function,omitempty"`
 }

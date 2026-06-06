@@ -10,17 +10,24 @@ import (
 	"tree-sit/test/config"
 	"tree-sit/test/functions"
 	"tree-sit/test/imports"
+	"tree-sit/test/returns"
 	"tree-sit/test/routes"
 	"tree-sit/test/scanner"
 	"tree-sit/test/types"
 )
 
 const (
-	configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml"
+	// Mac
+	//configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
-	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app/backend"
+	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app/backend"
+
+	// Windows:
+	configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/http.yml"
+
+	targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/app/backend"
 )
 
 func fmtSites(sites []types.UsageSite) string {
@@ -73,12 +80,28 @@ func fmtParams(params []types.Param) string {
 	return "(" + strings.Join(parts, ", ") + ")"
 }
 
+func fmtReturns(rets []types.ReturnDef) string {
+	if len(rets) == 0 {
+		return ""
+	}
+	seen := make(map[string]bool)
+	var shapes []string
+	for _, r := range rets {
+		if !seen[r.Shape] {
+			seen[r.Shape] = true
+			shapes = append(shapes, r.Shape)
+		}
+	}
+	return " → " + strings.Join(shapes, " | ")
+}
+
 type FileSnapshot struct {
 	Path      string              `json:"path"`
 	Functions []types.FunctionDef `json:"functions"`
 	Imports   []types.Import      `json:"imports"`
 	Classes   []types.ClassDef    `json:"classes"`
 	Routes    []types.Primitive   `json:"routes"`
+	Returns   []types.ReturnDef   `json:"returns"`
 }
 
 func main() {
@@ -96,6 +119,7 @@ func main() {
 	functionRules := functions.CompileRules(cfg.FunctionRules)
 	classRules := classes.CompileClassRules(cfg.ClassRules)
 	fieldRules := classes.CompileFieldRules(cfg.FieldRules)
+	returnRules := returns.CompileRules(cfg.ReturnRules)
 
 	files, err := scanner.ScanDir(targetDir)
 	if err != nil {
@@ -107,6 +131,8 @@ func main() {
 
 	for _, f := range files {
 		fns := functions.Extract(f, functionRules)
+		rets := returns.Extract(f, returnRules, fns)
+		fns = returns.Attach(fns, rets) // Attached to return return statements
 		imps := imports.Resolve(f, imports.Extract(f, importRules), fns)
 		cls := classes.Extract(f, classRules, fieldRules)
 		rts := routeExtractor.Extract(f)
@@ -129,7 +155,7 @@ func main() {
 
 		for _, fn := range fns {
 			if classOf[fn.StartLine] == "" {
-				fmt.Printf("  fn %s %s  (line %d)\n", fn.Name, fmtParams(fn.Params), fn.StartLine)
+				fmt.Printf("  fn %s %s  (line %d)%s\n", fn.Name, fmtParams(fn.Params), fn.StartLine, fmtReturns(fn.Returns))
 			}
 		}
 
@@ -180,6 +206,7 @@ func main() {
 			Imports:   imps,
 			Classes:   cls,
 			Routes:    rts,
+			Returns:   rets,
 		})
 	}
 

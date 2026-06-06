@@ -96,6 +96,9 @@ body { background: var(--bg); color: var(--tx); font-family: var(--sans); min-he
 .sym { font: 12px var(--mono); color: var(--tx); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .det { font: 11px var(--mono); color: #888; flex-shrink: 0; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ln  { font: 10px var(--mono); color: var(--dm); flex-shrink: 0; }
+.ret { font: 10px var(--mono); color: var(--rt); opacity: .8; flex-shrink: 0; white-space: nowrap; }
+.ret::before { content: '→ '; color: var(--dm); }
+.retln { color: var(--dm); font-size: 9px; }
 
 /* ── uses sub-row ── */
 .uses { font: 11px var(--mono); color: var(--mt); padding: 1px 14px 4px 44px; }
@@ -212,15 +215,33 @@ function renderUses(fnName, fnUses, indentClass = '') {
   return `<div class="uses ${indentClass}">uses: ${refs.map(u => `<em>${esc(u.ip)}.${esc(u.sym)}</em>`).join(' · ')}</div>`;
 }
 
+function fmtReturnShapes(fn) {
+  const rets = fn.returns ?? [];
+  if (!rets.length) return '';
+  const byShape = new Map();
+  for (const r of rets) {
+    if (!r.shape) continue;
+    if (!byShape.has(r.shape)) byShape.set(r.shape, []);
+    byShape.get(r.shape).push(r.line);
+  }
+  return [...byShape.entries()]
+    .map(([shape, lines]) =>
+      `${esc(shape)}<span class="retln">:L${lines.join(',')}</span>`
+    )
+    .join('<span style="color:var(--dm)"> | </span>');
+}
+
 function renderFn(fn, q, indent, fnUses) {
-  const name = fn.Name ?? '';
+  const name   = fn.Name ?? '';
   const params = fmtParams(fn.Params);
-  const line = fn.StartLine;
+  const line   = fn.StartLine;
+  const shapes = fmtReturnShapes(fn);
   return `
     <div class="row ${indent}">
       <span class="b bfn">fn</span>
       <span class="sym">${hl(name, q)}</span>
       <span class="det">${hl(params, q)}</span>
+      ${shapes ? `<span class="ret">${shapes}</span>` : ''}
       ${line ? `<span class="ln">L${line}</span>` : ''}
     </div>
     ${renderUses(name, fnUses, indent)}`;

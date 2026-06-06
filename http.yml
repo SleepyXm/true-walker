@@ -330,3 +330,70 @@ field_rules:
   - name: rb-attr
     pattern: '^\s+attr_(?:accessor|reader|writer)\s+:(?P<field>\w+)'
     language: .rb
+
+
+# ── Default Return Rules ──────────────────────────────────────────────────────────────
+return_rules:
+  # ── language-agnostic ──────────────────────────────
+  - name: return
+    pattern: 'return\s*(?P<value>.+)?'
+
+  - name: yield
+    pattern: 'yield\s*(?P<value>.+)?'
+
+  - name: throw
+    pattern: 'throw\s*(?P<value>.+)?'
+
+  - name: raise
+    pattern: 'raise\s*(?P<value>.+)?'
+
+  - name: panic
+    pattern: 'panic[!]?\s*\((?P<value>[^)]*)\)'
+
+  - name: die
+    pattern: 'die\s*(?P<value>.+)?'
+
+  - name: exit
+    pattern: 'exit\s*(?P<value>.+)?'
+
+  - name: abort
+    pattern: 'abort\s*(?P<value>.+)?'
+
+  - name: propagate
+    pattern: '(?P<value>\w+)\?'
+
+  - name: break
+    pattern: 'break\s*(?P<value>.+)?'
+
+  # ── language-specific ──────────────────────────────
+  - name: py-return
+    pattern: 'return\s+(?P<value>.+)'
+    language: .py
+
+  - name: py-raise
+    pattern: 'raise\s+(?P<exception>\w+)\s*\((?P<args>[^)]*)\)'
+    language: .py
+
+  - name: go-return-multi
+    pattern: 'return\s+(?P<value>[^,\n]+,\s*[^,\n]+)'
+    language: .go
+
+  - name: go-return-single
+    pattern: 'return\s+(?P<value>\S+)$'
+    language: .go
+
+  - name: ts-return
+    pattern: 'return\s+(?P<value>.+)'
+    language: .ts
+
+  - name: ts-throw
+    pattern: 'throw\s+new\s+(?P<value>\w+)\s*\((?P<args>[^)]*)\)'
+    language: .ts
+
+  - name: js-return
+    pattern: 'return\s+(?P<value>.+)'
+    language: .js
+
+  - name: rs-return
+    pattern: 'return\s+(?P<value>.+)'
+    language: .rs
