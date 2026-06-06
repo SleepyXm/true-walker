@@ -371,7 +371,7 @@ return_rules:
     language: .py
 
   - name: py-raise
-    pattern: 'raise\s+(?P<exception>\w+)\s*\((?P<args>[^)]*)\)'
+    pattern: 'raise\s+(?P<value>[\w]+(?:\s*\([^)]*\))?)'
     language: .py
 
   - name: go-return-multi
@@ -397,3 +397,15 @@ return_rules:
   - name: rs-return
     pattern: 'return\s+(?P<value>.+)'
     language: .rs
+
+  - name: py-yield
+    pattern: 'yield\s+(?P<value>.+)'
+    language: .py
+
+  - name: js-yield
+    pattern: 'yield\s+(?P<value>.+)'
+    language: .js
+
+  - name: ts-yield
+    pattern: 'yield\s+(?P<value>.+)'
+    language: .ts
