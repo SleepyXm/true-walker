@@ -32,10 +32,6 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 		content = collapse(content, '(', ')')
 	case ".js", ".ts", ".tsx":
 		content = collapse(content, '{', '}')
-	case ".go":
-		// Mask everything outside import blocks so the go-import regex
-		// can't match quoted string literals inside function bodies.
-		content = maskGoNonImports(content)
 	}
 
 	byPath := make(map[string]*types.Import)
@@ -90,20 +86,15 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 			default:
 				if idx := r.Re.SubexpIndex("import"); idx > 0 {
 					if path := subgroup(line, m, idx); path != "" {
-						// Capture alias if the rule provides one (e.g. go-import-alias).
-						alias := ""
-						if idxAlias := r.Re.SubexpIndex("alias"); idxAlias > 0 {
-							alias = subgroup(line, m, idxAlias)
-						}
 						if idxNames := r.Re.SubexpIndex("names"); idxNames > 0 {
 							for _, token := range strings.Split(subgroup(line, m, idxNames), ",") {
-								name, a := parseAlias(strings.TrimSpace(token))
+								name, alias := parseAlias(strings.TrimSpace(token))
 								if name != "" {
-									add(path, name, a)
+									add(path, name, alias)
 								}
 							}
 						} else {
-							add(path, "", alias)
+							add(path, "", "")
 						}
 					}
 				}
@@ -132,46 +123,6 @@ func Resolve(f types.SourceFile, imps []types.Import, fns []types.FunctionDef) [
 		}
 	}
 	return imps
-}
-
-// maskGoNonImports replaces every line that is NOT inside a Go import block
-// with a blank line. This prevents the go-import regex from matching quoted
-// string literals in function bodies (SQL, fmt strings, map keys, etc.).
-//
-// Handles:
-//   - import ( ... )   grouped block
-//   - import "path"    single bare import
-//   - import `path`    single bare import (backtick)
-func maskGoNonImports(src []byte) []byte {
-	var buf bytes.Buffer
-	sc := bufio.NewScanner(bytes.NewReader(src))
-	inBlock := false
-	for sc.Scan() {
-		line := sc.Text()
-		trimmed := strings.TrimSpace(line)
-		switch {
-		case !inBlock && strings.HasPrefix(trimmed, "import ("):
-			// Opening of a grouped import block — suppress this line itself.
-			inBlock = true
-			buf.WriteByte('\n')
-		case !inBlock && (strings.HasPrefix(trimmed, "import \"") || strings.HasPrefix(trimmed, "import `")):
-			// Single bare import — pass through for go-import-single to match.
-			buf.WriteString(line)
-			buf.WriteByte('\n')
-		case inBlock && trimmed == ")":
-			// Closing paren — end of block.
-			inBlock = false
-			buf.WriteByte('\n')
-		case inBlock:
-			// Inside the block — pass through for go-import / go-import-alias.
-			buf.WriteString(line)
-			buf.WriteByte('\n')
-		default:
-			// Everything else (function bodies, comments, declarations) — blank out.
-			buf.WriteByte('\n')
-		}
-	}
-	return buf.Bytes()
 }
 
 func findUsages(content []byte, ident string, fns []types.FunctionDef) []types.UsageSite {
@@ -208,6 +159,7 @@ func containing(fns []types.FunctionDef, line int) string {
 	return name
 }
 
+// parseAlias splits "pandas as pd" → ("pandas", "pd"), or "pandas" → ("pandas", "").
 func parseAlias(s string) (path, alias string) {
 	parts := strings.Fields(s)
 	for i, p := range parts {
@@ -218,6 +170,7 @@ func parseAlias(s string) (path, alias string) {
 	return s, ""
 }
 
+// resolveIdent returns alias if set, otherwise the last segment of path.
 func resolveIdent(path, alias string) string {
 	if alias != "" {
 		return alias
@@ -243,6 +196,27 @@ func resolveIdent(path, alias string) string {
 	return last
 }
 
+// findUsageLines scans content for lines where ident appears as a word.
+func findUsageLines(content []byte, ident string) []int {
+	if ident == "" {
+		return nil
+	}
+	re, err := regexp.Compile(`\b` + regexp.QuoteMeta(ident) + `\b`)
+	if err != nil {
+		return nil
+	}
+	var lines []int
+	sc := bufio.NewScanner(bytes.NewReader(content))
+	lineNum := 0
+	for sc.Scan() {
+		lineNum++
+		if re.MatchString(sc.Text()) {
+			lines = append(lines, lineNum)
+		}
+	}
+	return lines
+}
+
 func collapse(src []byte, open, close byte) []byte {
 	var buf bytes.Buffer
 	sc := bufio.NewScanner(bytes.NewReader(src))
@@ -265,6 +239,7 @@ func collapse(src []byte, open, close byte) []byte {
 			if openIdx >= 0 && reImportBlockStart.MatchString(line) {
 				after := line[openIdx+1:]
 				if strings.IndexByte(after, close) >= 0 {
+					// already single-line, write as-is
 					buf.WriteString(line)
 					buf.WriteByte('\n')
 				} else {

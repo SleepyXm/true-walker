@@ -78,7 +78,8 @@ route_rules:
 # ── Import Rules ──────────────────────────────────────────────────────────────
 import_rules:
   - name: go-import
-    pattern: '^\s*"(?P<import>[^"]+)"'
+    # Matches import paths like "database/sql" but excludes JSON keys like "net_pnl": 0
+    pattern: '^\s*"(?P<import>[\w/.-]+)"\s*(//.*)?$'
     language: .go
 
   - name: go-import-single
