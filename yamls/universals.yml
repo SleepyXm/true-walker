@@ -1,0 +1,45 @@
+# universals.yml
+name: universals
+
+route_methods:
+  - GET
+  - POST
+  - PUT
+  - PATCH
+  - DELETE
+
+route_rules:
+  - name: dot-method
+    pattern: '(?P<receiver>\w+)\.(?P<method>METHOD)\s*\(\s*["`](?P<path>/[^"`\s]*)'
+
+  - name: decorator
+    pattern: '@(?P<receiver>\w+)\.(?P<method>METHOD)\s*\(\s*["`](?P<path>/[^"`\s]+)'
+
+return_rules:
+  - name: return
+    pattern: 'return\s+(?P<value>.+)'
+
+  - name: yield
+    pattern: 'yield\s+(?P<value>.+)'
+
+  - name: throw
+    pattern: 'throw\s+(?P<value>.+)'
+
+  - name: raise
+    pattern: 'raise\s+(?P<value>.+)'
+
+  - name: panic
+    pattern: 'panic[!]?\s*\((?P<value>[^)]*)\)'
+
+conditional_rules:
+  - name: if
+    pattern: 'if\s+(?P<condition>.+)'
+
+  - name: else-if
+    pattern: 'else\s+if\s+(?P<condition>.+)'
+
+  - name: elif
+    pattern: 'elif\s+(?P<condition>.+)'
+
+  - name: else
+    pattern: '\belse\b'
