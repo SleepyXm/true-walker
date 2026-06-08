@@ -2,6 +2,7 @@ package types
 
 import (
 	"regexp"
+	"tree-sit/test/syntax"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -13,6 +14,7 @@ type SourceFile struct {
 	Content  []byte
 	Ext      string
 	Language *sitter.Language
+	Syntax   syntax.LangSyntax
 }
 
 // ------------------------- Primitive Types ------------------------- //

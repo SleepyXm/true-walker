@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"tree-sit/test/syntax"
 	"tree-sit/test/types"
 )
 
@@ -53,11 +54,7 @@ func Extract(f types.SourceFile, classRules []types.ClassRule, fieldRules []type
 
 	for i, line := range lines {
 		lineNum := i + 1
-		trimmed := strings.TrimSpace(line)
-		if (f.Ext == ".py" || f.Ext == ".rb") && strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-		if (f.Ext == ".go" || f.Ext == ".ts" || f.Ext == ".js" || f.Ext == ".tsx" || f.Ext == ".jsx") && strings.HasPrefix(trimmed, "//") {
+		if syntax.IsComment(line, f.Syntax) {
 			continue
 		}
 		for _, r := range classRules {
@@ -73,13 +70,13 @@ func Extract(f types.SourceFile, classRules []types.ClassRule, fieldRules []type
 				continue
 			}
 			bases := parseBases(subgroup(line, m, r.BasesIdx))
-			body, endLine := collectBody(lines, i, f.Ext)
+			body, endLine := syntax.CollectBlock(lines, i, f.Syntax)
 			defs = append(defs, types.ClassDef{
 				Name:      name,
 				Bases:     bases,
 				StartLine: lineNum,
 				EndLine:   endLine,
-				Fields:    parseFields(body, f.Ext, fieldRules),
+				Fields:    parseFields(body, f.Ext, fieldRules, f.Syntax),
 			})
 			seen[lineNum] = true
 		}
@@ -89,70 +86,11 @@ func Extract(f types.SourceFile, classRules []types.ClassRule, fieldRules []type
 	return defs
 }
 
-// collectBody collects the body of a class definition.
-// For brace languages it tracks { } depth.
-// For Python it tracks indentation.
-func collectBody(lines []string, startIdx int, ext string) (string, int) {
-	if ext == ".py" {
-		return collectPythonBody(lines, startIdx)
-	}
-	return collectBraceBody(lines, startIdx)
-}
-
-func collectBraceBody(lines []string, startIdx int) (string, int) {
-	var buf strings.Builder
-	depth := 0
-	opened := false
-
-	for i := startIdx; i < len(lines); i++ {
-		for _, ch := range lines[i] {
-			switch ch {
-			case '{':
-				depth++
-				opened = true
-			case '}':
-				depth--
-				if opened && depth == 0 {
-					return strings.TrimSpace(buf.String()), i + 1
-				}
-			default:
-				if opened && depth > 0 {
-					buf.WriteRune(ch)
-				}
-			}
-		}
-		if opened && depth > 0 {
-			buf.WriteByte('\n')
-		}
-	}
-	return strings.TrimSpace(buf.String()), startIdx + 1
-}
-
-func collectPythonBody(lines []string, startIdx int) (string, int) {
-	// find the base indentation from the class line
-	baseIndent := len(lines[startIdx]) - len(strings.TrimLeft(lines[startIdx], " \t"))
-	var buf strings.Builder
-
-	for i := startIdx + 1; i < len(lines); i++ {
-		line := lines[i]
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		indent := len(line) - len(strings.TrimLeft(line, " \t"))
-		if indent <= baseIndent {
-			return strings.TrimSpace(buf.String()), i
-		}
-		buf.WriteString(line)
-		buf.WriteByte('\n')
-	}
-	return strings.TrimSpace(buf.String()), len(lines)
-}
-
-func parseFields(body, ext string, rules []types.FieldRule) []types.FieldDef {
+func parseFields(body, ext string, rules []types.FieldRule, syn syntax.LangSyntax) []types.FieldDef {
 	var fields []types.FieldDef
 	for _, line := range strings.Split(body, "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" {
+		if line == "" || syntax.IsComment(line, syn) {
 			continue
 		}
 		for _, r := range rules {

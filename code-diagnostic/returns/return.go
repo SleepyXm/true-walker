@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"tree-sit/test/syntax"
 	"tree-sit/test/types"
 )
 
@@ -73,19 +74,31 @@ func CompileRules(defs []types.ReturnRuleDef) []types.ReturnRule {
 	return out
 }
 
+// helper to get a default LangSyntax based on file extension
+func langSyntaxForExt(ext string) syntax.LangSyntax {
+	switch ext {
+	case ".py", ".rb":
+		return syntax.LangSyntax{LineComment: "#", BlockStyle: syntax.IndentBlock}
+	case ".go":
+		return syntax.LangSyntax{LineComment: "//"}
+	case ".js", ".ts", ".tsx", ".jsx":
+		return syntax.LangSyntax{LineComment: "//", AngleDepth: true}
+	default:
+		return syntax.LangSyntax{}
+	}
+}
+
 func Extract(f types.SourceFile, rules []types.ReturnRule, fns []types.FunctionDef) []types.ReturnDef {
 	var defs []types.ReturnDef
-	lines := strings.Split(string(f.Content), "\n")
+	syn := langSyntaxForExt(f.Ext)
 
-	for i, line := range lines {
-		lineNum := i + 1
-		trimmed := strings.TrimSpace(line)
+	sc := syntax.NewScanner(f.Content)
+	for sc.Scan() {
+		lineNum := sc.Line
+		trimmed := strings.TrimSpace(sc.Text())
 
 		// skip comment lines — they can contain return-like syntax in docs
-		if (f.Ext == ".py" || f.Ext == ".rb") && strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-		if (f.Ext == ".go" || f.Ext == ".ts" || f.Ext == ".js" || f.Ext == ".tsx" || f.Ext == ".jsx") && strings.HasPrefix(trimmed, "//") {
+		if syntax.IsComment(trimmed, syn) {
 			continue
 		}
 
@@ -93,11 +106,11 @@ func Extract(f types.SourceFile, rules []types.ReturnRule, fns []types.FunctionD
 			if r.Language != "" && r.Language != f.Ext {
 				continue
 			}
-			m := r.Re.FindStringSubmatchIndex(line)
+			m := r.Re.FindStringSubmatchIndex(trimmed)
 			if m == nil {
 				continue
 			}
-			value := strings.TrimSpace(subgroup(line, m, r.ValueIdx))
+			value := strings.TrimSpace(subgroup(trimmed, m, r.ValueIdx))
 			mech := mechanism(r.Name)
 			defs = append(defs, types.ReturnDef{
 				Mechanism: mech,
@@ -429,27 +442,8 @@ func looksLikeData(v string) bool {
 // Prevents splitting inside nested function calls, struct literals, or
 // generic type parameters.
 func topLevelSplit(s string) []string {
-	var parts []string
-	depth, start := 0, 0
-	for i, ch := range s {
-		switch ch {
-		case '(', '[', '{', '<':
-			depth++
-		case ')', ']', '}', '>':
-			if depth > 0 {
-				depth--
-			}
-		case ',':
-			if depth == 0 {
-				parts = append(parts, strings.TrimSpace(s[start:i]))
-				start = i + 1
-			}
-		}
-	}
-	if last := strings.TrimSpace(s[start:]); last != "" {
-		parts = append(parts, last)
-	}
-	return parts
+	// Uses the shared depth tracker with an empty struct for standard bracket rules
+	return syntax.SplitDepth(s, ',', syntax.LangSyntax{})
 }
 
 // containing returns the name of the innermost function that contains the

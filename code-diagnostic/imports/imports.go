@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"tree-sit/test/syntax"
 	"tree-sit/test/types"
 )
 
@@ -27,11 +28,13 @@ func CompileRules(defs []types.ImportRuleDef) []types.ImportRule {
 // Extract returns imports with their alias and usage line numbers.
 func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 	content := f.Content
+	lines := strings.Split(string(content), "\n")
+
 	switch f.Ext {
 	case ".py":
-		content = collapse(content, '(', ')')
+		content = flattenMultiLine(lines, '(', ')')
 	case ".js", ".ts", ".tsx":
-		content = collapse(content, '{', '}')
+		content = flattenMultiLine(lines, '{', '}')
 	}
 
 	byPath := make(map[string]*types.Import)
@@ -51,7 +54,7 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 		}
 	}
 
-	sc := bufio.NewScanner(bytes.NewReader(content))
+	sc := syntax.NewScanner(content)
 	for sc.Scan() {
 		line := sc.Text()
 		for _, r := range rules {
@@ -273,6 +276,36 @@ func collapse(src []byte, open, close byte) []byte {
 			inBlock = false
 		} else {
 			collect(line)
+		}
+	}
+	return buf.Bytes()
+}
+
+func flattenMultiLine(lines []string, open, close byte) []byte {
+	var buf bytes.Buffer
+	i := 0
+	for i < len(lines) {
+		line := lines[i]
+		if reImportBlockStart.MatchString(line) && !strings.Contains(line, string(close)) {
+			body, nextIdx := syntax.CollectUntilClose(lines, i+1, open, close)
+
+			prefixEnd := strings.IndexByte(line, open)
+			if prefixEnd >= 0 {
+				buf.WriteString(line[:prefixEnd])
+			}
+
+			for _, token := range strings.Split(body, ",") {
+				if t := strings.TrimSpace(token); t != "" && !strings.HasPrefix(t, "#") {
+					buf.WriteByte(' ')
+					buf.WriteString(t)
+				}
+			}
+			buf.WriteByte('\n')
+			i = nextIdx
+		} else {
+			buf.WriteString(line)
+			buf.WriteByte('\n')
+			i++
 		}
 	}
 	return buf.Bytes()
