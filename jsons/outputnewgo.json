@@ -1373,6 +1373,19 @@
     ],
     "imports": [
       {
+        "Path": "github.com/jackc/pgx/v5/stdlib",
+        "Alias": "_",
+        "Names": null,
+        "Usages": {
+          "_": [
+            {
+              "Line": 4,
+              "Function": ""
+            }
+          ]
+        }
+      },
+      {
         "Path": "golang.org/x/crypto/bcrypt",
         "Alias": "",
         "Names": null,
@@ -6185,6 +6198,31 @@
         }
       },
       {
+        "Path": "finsec-backend/handlers/accounts",
+        "Alias": "handlers",
+        "Names": null,
+        "Usages": {
+          "handlers": [
+            {
+              "Line": 5,
+              "Function": ""
+            },
+            {
+              "Line": 14,
+              "Function": "RegisterAccounteRoutes"
+            },
+            {
+              "Line": 15,
+              "Function": "RegisterAccounteRoutes"
+            },
+            {
+              "Line": 16,
+              "Function": "RegisterAccounteRoutes"
+            }
+          ]
+        }
+      },
+      {
         "Path": "finsec-backend/middleware",
         "Alias": "",
         "Names": null,
@@ -6305,6 +6343,47 @@
             },
             {
               "Line": 11,
+              "Function": "RegisterAuthRoutes"
+            }
+          ]
+        }
+      },
+      {
+        "Path": "finsec-backend/handlers/auth",
+        "Alias": "handlers",
+        "Names": null,
+        "Usages": {
+          "handlers": [
+            {
+              "Line": 5,
+              "Function": ""
+            },
+            {
+              "Line": 12,
+              "Function": "RegisterAuthRoutes"
+            },
+            {
+              "Line": 13,
+              "Function": "RegisterAuthRoutes"
+            },
+            {
+              "Line": 14,
+              "Function": "RegisterAuthRoutes"
+            },
+            {
+              "Line": 15,
+              "Function": "RegisterAuthRoutes"
+            },
+            {
+              "Line": 16,
+              "Function": "RegisterAuthRoutes"
+            },
+            {
+              "Line": 17,
+              "Function": "RegisterAuthRoutes"
+            },
+            {
+              "Line": 18,
               "Function": "RegisterAuthRoutes"
             }
           ]
@@ -6640,6 +6719,27 @@
         }
       },
       {
+        "Path": "finsec-backend/handlers/profile",
+        "Alias": "handlers",
+        "Names": null,
+        "Usages": {
+          "handlers": [
+            {
+              "Line": 5,
+              "Function": ""
+            },
+            {
+              "Line": 12,
+              "Function": "RegisterProfileRoutes"
+            },
+            {
+              "Line": 13,
+              "Function": "RegisterProfileRoutes"
+            }
+          ]
+        }
+      },
+      {
         "Path": "finsec-backend/middleware",
         "Alias": "",
         "Names": null,
@@ -6739,6 +6839,23 @@
       }
     ],
     "imports": [
+      {
+        "Path": "finsec-backend/handlers-experimental",
+        "Alias": "handlers_experimental",
+        "Names": null,
+        "Usages": {
+          "handlers_experimental": [
+            {
+              "Line": 4,
+              "Function": ""
+            },
+            {
+              "Line": 14,
+              "Function": "RegisterStockRoutes"
+            }
+          ]
+        }
+      },
       {
         "Path": "finsec-backend/handlers/stocks",
         "Alias": "",

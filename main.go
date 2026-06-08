@@ -17,7 +17,7 @@ import (
 
 const (
 	// Mac
-	//configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/http.yml"
+	//configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/http.yml"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
@@ -26,7 +26,7 @@ const (
 	// Windows:
 	configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
 
-	targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/go-backend"
+	targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/app/backend"
 )
 
 func main() {
@@ -81,7 +81,7 @@ func main() {
 
 	drainWg.Wait()
 
-	outFile, err := os.Create("jsons/outputnewgo.json")
+	outFile, err := os.Create("jsons/outputnew.json")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -94,7 +94,11 @@ func Extract(f types.SourceFile, rules []types.ImportRule) []types.Import {
 								}
 							}
 						} else {
-							add(path, "", "")
+							alias := ""
+							if i := r.Re.SubexpIndex("alias"); i > 0 {
+								alias = subgroup(line, m, i)
+							}
+							add(path, "", alias)
 						}
 					}
 				}

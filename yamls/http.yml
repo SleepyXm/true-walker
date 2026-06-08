@@ -82,6 +82,10 @@ import_rules:
     pattern: '^\s*"(?P<import>[\w/.-]+)"\s*(//.*)?$'
     language: .go
 
+  - name: go-import-alias
+    pattern: '^\s*(?P<alias>\w+)\s+"(?P<import>[\w/.-]+)"\s*(//.*)?$'
+    language: .go
+
   - name: go-import-single
     pattern: '^import\s+"(?P<import>[^"]+)"'
     language: .go
