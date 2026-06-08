@@ -26,7 +26,8 @@ const (
 	// Windows:
 	configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
 
-	targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/go-backend"
+	targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/app/backend"
+	//targetDir = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/samples/kafka-trunk/core/src"
 )
 
 func main() {
@@ -81,7 +82,7 @@ func main() {
 
 	drainWg.Wait()
 
-	outFile, err := os.Create("jsons/outputnewnewgo.json")
+	outFile, err := os.Create("jsons/outputbackend.json")
 	if err != nil {
 		log.Fatal(err)
 	}

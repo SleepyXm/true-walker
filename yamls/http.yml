@@ -155,6 +155,10 @@ import_rules:
     pattern: '^using\s+(?P<import>[\w\.]+)'
     language: .cs
 
+  - name: c-include
+    pattern: '^\s*#include\s+(?P<import><[^>]+>|"[^"]+")'
+    language: .c
+
 # ── Function Rules ──────────────────────────────────────────────────────────────
 
 function_rules:
@@ -192,6 +196,16 @@ function_rules:
   - name: cpp-function
     pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
     language: .cpp
+
+  - name: c-function
+    pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
+    # should look like it can capture this int time_independent_strcmp(char *a, char *b, int len) {
+    #int diff = 0;
+    #for (int j = 0; j < len; j++) {
+    #    diff |= (a[j] ^ b[j]);
+    #}
+    #return diff; /* If zero strings are the same. */
+#} # should be able to have list of representation functions like int, void, etc.
 
   - name: go-function-typed
     pattern: 'func\s+(?P<function>\w+)\s*\([^)]*\)\s*(?P<returntype>[\w\[\]\*]+)\s*\{'

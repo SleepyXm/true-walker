@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"tree-sit/test/helpers"
 	"tree-sit/test/syntax"
 	"tree-sit/test/types"
 )
@@ -44,7 +45,7 @@ func Extract(f types.SourceFile, rules []types.FunctionRule) []types.FunctionDef
 			if m == nil || seen[lineNum] {
 				continue
 			}
-			name := subgroup(line, m, r.NameIdx)
+			name := helpers.Subgroup(line, m, r.NameIdx)
 			if name == "" {
 				continue
 			}
@@ -116,15 +117,4 @@ func ParseParams(raw string, syn syntax.LangSyntax) []types.Param {
 		}
 	}
 	return params
-}
-
-func subgroup(s string, m []int, idx int) string {
-	if idx <= 0 {
-		return ""
-	}
-	i := idx * 2
-	if i+1 >= len(m) || m[i] < 0 {
-		return ""
-	}
-	return s[m[i]:m[i+1]]
 }

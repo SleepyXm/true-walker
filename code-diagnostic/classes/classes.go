@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"tree-sit/test/helpers"
 	"tree-sit/test/syntax"
 	"tree-sit/test/types"
 )
@@ -54,7 +55,7 @@ func Extract(f types.SourceFile, classRules []types.ClassRule, fieldRules []type
 
 	for i, line := range lines {
 		lineNum := i + 1
-		if syntax.IsComment(line, f.Syntax) {
+		if syntax.IsComment(line, f.Syntax) || syntax.IsBlank(line) {
 			continue
 		}
 		for _, r := range classRules {
@@ -65,11 +66,11 @@ func Extract(f types.SourceFile, classRules []types.ClassRule, fieldRules []type
 			if m == nil || seen[lineNum] {
 				continue
 			}
-			name := subgroup(line, m, r.NameIdx)
+			name := helpers.Subgroup(line, m, r.NameIdx)
 			if name == "" {
 				continue
 			}
-			bases := parseBases(subgroup(line, m, r.BasesIdx))
+			bases := parseBases(helpers.Subgroup(line, m, r.BasesIdx))
 			body, endLine := syntax.CollectBlock(lines, i, f.Syntax)
 			defs = append(defs, types.ClassDef{
 				Name:      name,
@@ -101,11 +102,12 @@ func parseFields(body, ext string, rules []types.FieldRule, syn syntax.LangSynta
 			if m == nil {
 				continue
 			}
+
 			fields = append(fields, types.FieldDef{
-				Name:    subgroup(line, m, r.NameIdx),
-				Type:    subgroup(line, m, r.TypeIdx),
-				Tag:     subgroup(line, m, r.TagIdx),
-				Default: subgroup(line, m, r.DefaultIdx),
+				Name:    helpers.Subgroup(line, m, r.NameIdx),
+				Type:    helpers.Subgroup(line, m, r.TypeIdx),
+				Tag:     helpers.Subgroup(line, m, r.TagIdx),
+				Default: helpers.Subgroup(line, m, r.DefaultIdx),
 			})
 			break
 		}
@@ -124,15 +126,4 @@ func parseBases(raw string) []string {
 		}
 	}
 	return bases
-}
-
-func subgroup(s string, m []int, idx int) string {
-	if idx <= 0 {
-		return ""
-	}
-	i := idx * 2
-	if i+1 >= len(m) || m[i] < 0 {
-		return ""
-	}
-	return s[m[i]:m[i+1]]
 }

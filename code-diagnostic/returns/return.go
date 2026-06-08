@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"tree-sit/test/helpers"
 	"tree-sit/test/syntax"
 	"tree-sit/test/types"
 )
@@ -110,14 +111,14 @@ func Extract(f types.SourceFile, rules []types.ReturnRule, fns []types.FunctionD
 			if m == nil {
 				continue
 			}
-			value := strings.TrimSpace(subgroup(trimmed, m, r.ValueIdx))
+			value := strings.TrimSpace(helpers.Subgroup(trimmed, m, r.ValueIdx))
 			mech := mechanism(r.Name)
 			defs = append(defs, types.ReturnDef{
 				Mechanism: mech,
 				Shape:     classify(mech, value),
 				Value:     value,
 				Line:      lineNum,
-				Function:  containing(fns, lineNum),
+				Function:  helpers.Containing(fns, lineNum),
 			})
 			// first matching rule wins — language-specific rules must be
 			// listed before generics in the yaml to take priority
@@ -444,29 +445,4 @@ func looksLikeData(v string) bool {
 func topLevelSplit(s string) []string {
 	// Uses the shared depth tracker with an empty struct for standard bracket rules
 	return syntax.SplitDepth(s, ',', syntax.LangSyntax{})
-}
-
-// containing returns the name of the innermost function that contains the
-// given line number. Relies on fns being sorted by StartLine ascending,
-// which functions.Extract guarantees.
-func containing(fns []types.FunctionDef, line int) string {
-	name := ""
-	for _, d := range fns {
-		if d.StartLine > line {
-			break
-		}
-		name = d.Name
-	}
-	return name
-}
-
-func subgroup(s string, m []int, idx int) string {
-	if idx <= 0 {
-		return ""
-	}
-	i := idx * 2
-	if i+1 >= len(m) || m[i] < 0 {
-		return ""
-	}
-	return s[m[i]:m[i+1]]
 }
