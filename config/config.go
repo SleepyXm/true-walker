@@ -34,19 +34,25 @@ func Load(dir string) (*types.Config, error) {
 		return nil, err
 	}
 
+	conditionalRules, err := decodeFile[types.ConditionalsFile](filepath.Join(dir, "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/code-specific/conditionals.yml"))
+	if err != nil {
+		return nil, err
+	}
+
 	return &types.Config{
-		Name:            routes.Name,
-		RouteMethods:    routes.RouteMethods,
-		RouteRules:      routes.RouteRules,
-		PrefixRules:     routes.PrefixRules,
-		ImportRules:     imports.ImportRules,
-		FunctionRules:   functions.FunctionRules,
-		ParameterRules:  functions.ParameterRules,
-		ClassRules:      typesFile.ClassRules,
-		FieldRules:      typesFile.FieldRules,
-		LoopRules:       controlFlow.LoopRules,
-		AssignmentRules: controlFlow.AssignmentRules,
-		ReturnRules:     controlFlow.ReturnRules,
+		Name:             routes.Name,
+		RouteMethods:     routes.RouteMethods,
+		RouteRules:       routes.RouteRules,
+		PrefixRules:      routes.PrefixRules,
+		ImportRules:      imports.ImportRules,
+		FunctionRules:    functions.FunctionRules,
+		ParameterRules:   functions.ParameterRules,
+		ClassRules:       typesFile.ClassRules,
+		FieldRules:       typesFile.FieldRules,
+		LoopRules:        controlFlow.LoopRules,
+		AssignmentRules:  controlFlow.AssignmentRules,
+		ReturnRules:      controlFlow.ReturnRules,
+		ConditionalRules: conditionalRules.ConditionalRules,
 	}, nil
 }
 

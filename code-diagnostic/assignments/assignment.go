@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
 	"tree-sit/test/code-diagnostic/functions"
 	"tree-sit/test/core/helpers"
 	"tree-sit/test/core/syntax"
@@ -20,13 +21,16 @@ func LoadRules(path string, exts map[string]bool) []types.AssignmentRule {
 		log.Printf("assignments: cannot read %s: %v", path, err)
 		return nil
 	}
+
 	var f struct {
 		AssignmentRules []types.AssignmentRuleDef `yaml:"assignment_rules"`
 	}
+
 	if err := yaml.Unmarshal(data, &f); err != nil {
 		log.Printf("assignments: cannot parse %s: %v", path, err)
 		return nil
 	}
+
 	return CompileRules(f.AssignmentRules, exts)
 }
 
@@ -63,50 +67,94 @@ func Extract(
 
 	var defs []types.AssignmentDef
 
-	lines := strings.Split(string(f.Content), "\n")
+	syn := langSyntaxForExt(f.Ext)
 
-	for i, line := range lines {
-		lineNum := i + 1
+	// 1. mask strings/comments FIRST (critical fix)
+	masked := syntax.Mask(f.Content, syn)
 
-		if syntax.IsComment(line, f.Syntax) || syntax.IsBlank(line) {
-			continue
+	// 2. join continuations
+	joined := syntax.JoinContinuations(masked, syn)
+
+	lines := strings.Split(string(joined), "\n")
+
+	var buffer string
+	var startLine int
+	depth := 0
+
+	flush := func(line string, lineNum int) {
+		if strings.TrimSpace(buffer) == "" {
+			return
 		}
+
+		stmt := strings.TrimSpace(buffer)
 
 		for _, r := range rules {
 			if r.Language != "" && r.Language != f.Ext {
 				continue
 			}
 
-			m := r.Re.FindStringSubmatchIndex(line)
+			m := r.Re.FindStringSubmatchIndex(stmt)
 			if m == nil {
 				continue
 			}
 
-			varName := strings.TrimSpace(
-				helpers.Subgroup(line, m, r.VarIdx),
-			)
-
+			varName := strings.TrimSpace(helpers.Subgroup(stmt, m, r.VarIdx))
 			if varName == "" {
 				continue
 			}
 
 			value := ""
 			if r.ValueIdx >= 0 {
-				value = strings.TrimSpace(
-					helpers.Subgroup(line, m, r.ValueIdx),
-				)
+				value = strings.TrimSpace(helpers.Subgroup(stmt, m, r.ValueIdx))
 			}
 
 			defs = append(defs, types.AssignmentDef{
 				Var:      varName,
 				Value:    value,
-				Line:     lineNum,
-				Function: functions.Containing(fns, lineNum),
+				Line:     startLine,
+				Function: functions.Containing(fns, startLine),
 			})
 
 			break
 		}
+
+		buffer = ""
+		depth = 0
 	}
+
+	for i, line := range lines {
+		lineNum := i + 1
+		t := strings.TrimSpace(line)
+
+		if t == "" || syntax.IsComment(line, syn) {
+			continue
+		}
+
+		if buffer == "" {
+			startLine = lineNum
+		}
+
+		buffer += " " + t
+
+		// depth tracking (minimal but correct enough)
+		for _, ch := range line {
+			switch ch {
+			case '(', '{', '[':
+				depth++
+			case ')', '}', ']':
+				if depth > 0 {
+					depth--
+				}
+			}
+		}
+
+		// flush only when NOT inside structure AND line ends naturally
+		if depth == 0 && (strings.HasSuffix(t, "") || lineNum < len(lines)) {
+			flush(buffer, lineNum)
+		}
+	}
+
+	flush(buffer, len(lines))
 
 	sort.Slice(defs, func(i, j int) bool {
 		return defs[i].Line < defs[j].Line
@@ -115,7 +163,6 @@ func Extract(
 	return defs
 }
 
-// Attach correlates extracted assignments back onto their FunctionDefs.
 func Attach(
 	fns []types.FunctionDef,
 	assignments []types.AssignmentDef,
@@ -124,10 +171,7 @@ func Attach(
 	for i := range fns {
 		for _, a := range assignments {
 			if a.Function == fns[i].Name {
-				fns[i].Assignments = append(
-					fns[i].Assignments,
-					a,
-				)
+				fns[i].Assignments = append(fns[i].Assignments, a)
 			}
 		}
 	}

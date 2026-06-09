@@ -21,11 +21,10 @@ const (
 	// Mac
 	configPath = ""
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
-	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
+	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/chatgptsasshole"
 	rulesDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/code-specific"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
 	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app"
-	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
 
 	// Windows:
 	//configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
@@ -108,7 +107,7 @@ func main() {
 		grouped = append(grouped, DirGroup{Dir: dir, Files: byDir[dir]})
 	}
 
-	outFile, err := os.Create("jsons/outputfinsecfull.json")
+	outFile, err := os.Create("jsons/outputchatgpt.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -158,6 +157,14 @@ func printSnapshot(snap worker.FileSnapshot) {
 			} else {
 				fmt.Printf("  %s\n", imp.Path)
 			}
+		}
+	}
+
+	for _, c := range snap.Conditionals {
+		if c.Function != "" {
+			fmt.Printf("  [%s] %s  (line %d, in %s)\n", c.Kind, c.Condition, c.Line, c.Function)
+		} else {
+			fmt.Printf("  [%s] %s  (line %d)\n", c.Kind, c.Condition, c.Line)
 		}
 	}
 

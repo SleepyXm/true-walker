@@ -1,0 +1,419 @@
+conditional_rules:
+
+  # ── Go ────────────────────────────────────────────────────────────────────
+  - name: go-if
+    kind: if
+    pattern: '^\s*if\s+(?P<condition>[^{]+)\s*\{'
+    language: .go
+
+  - name: go-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s+(?P<condition>[^{]+)\s*\{'
+    language: .go
+
+  - name: go-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .go
+
+  - name: go-switch
+    kind: switch
+    pattern: '^\s*switch\s*(?P<condition>[^{]*)\s*\{'
+    language: .go
+
+  - name: go-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .go
+
+  - name: go-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .go
+
+  # ── Python ────────────────────────────────────────────────────────────────
+  - name: py-if
+    kind: if
+    pattern: '^\s*if\s+(?P<condition>[^:]+):'
+    language: .py
+
+  - name: py-elif
+    kind: else_if
+    pattern: '^\s*elif\s+(?P<condition>[^:]+):'
+    language: .py
+
+  - name: py-else
+    kind: else
+    pattern: '^\s*else\s*:'
+    language: .py
+
+  - name: py-match
+    kind: match
+    pattern: '^\s*match\s+(?P<condition>[^:]+):'
+    language: .py
+
+  - name: py-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .py
+
+  # ── JavaScript ────────────────────────────────────────────────────────────
+  - name: js-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .js
+
+  - name: js-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .js
+
+  - name: js-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .js
+
+  - name: js-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .js
+
+  - name: js-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .js
+
+  - name: js-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .js
+
+  # ── TypeScript ────────────────────────────────────────────────────────────
+  - name: ts-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .ts
+
+  - name: ts-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .ts
+
+  - name: ts-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .ts
+
+  - name: ts-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .ts
+
+  - name: ts-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .ts
+
+  - name: ts-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .ts
+
+  - name: tsx-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .tsx
+
+  - name: tsx-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .tsx
+
+  - name: tsx-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .tsx
+
+  - name: tsx-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .tsx
+
+  - name: tsx-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .tsx
+
+  # ── Rust ──────────────────────────────────────────────────────────────────
+  - name: rs-if
+    kind: if
+    pattern: '^\s*if\s+(?P<condition>[^{]+)\s*\{'
+    language: .rs
+
+  - name: rs-if-let
+    kind: if_let
+    pattern: '^\s*if\s+let\s+(?P<condition>[^{]+)\s*\{'
+    language: .rs
+
+  - name: rs-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s+(?P<condition>[^{]+)\s*\{'
+    language: .rs
+
+  - name: rs-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .rs
+
+  - name: rs-match
+    kind: match
+    pattern: '^\s*match\s+(?P<condition>[^{]+)\s*\{'
+    language: .rs
+
+  - name: rs-match-arm
+    kind: case
+    pattern: '^\s+(?P<condition>[^=>\n]+?)\s*=>'
+    language: .rs
+
+  # ── Java ──────────────────────────────────────────────────────────────────
+  - name: java-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .java
+
+  - name: java-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .java
+
+  - name: java-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .java
+
+  - name: java-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .java
+
+  - name: java-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .java
+
+  - name: java-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .java
+
+  # ── Kotlin ────────────────────────────────────────────────────────────────
+  - name: kt-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .kt
+
+  - name: kt-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .kt
+
+  - name: kt-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .kt
+
+  - name: kt-when
+    kind: match
+    pattern: '^\s*when\s*(?:\(\s*(?P<condition>[^)]+)\s*\))?\s*\{'
+    language: .kt
+
+  - name: kt-when-arm
+    kind: case
+    pattern: '^\s+(?P<condition>[^->\n]+?)\s*->'
+    language: .kt
+
+  # ── C ─────────────────────────────────────────────────────────────────────
+  - name: c-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .c
+
+  - name: c-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .c
+
+  - name: c-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .c
+
+  - name: c-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .c
+
+  - name: c-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .c
+
+  - name: c-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .c
+
+  # ── C++ ───────────────────────────────────────────────────────────────────
+  - name: cpp-if
+    kind: if
+    pattern: '^\s*if\s*(?:constexpr\s*)?\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .cpp
+
+  - name: cpp-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*(?:constexpr\s*)?\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .cpp
+
+  - name: cpp-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .cpp
+
+  - name: cpp-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .cpp
+
+  - name: cpp-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .cpp
+
+  - name: cpp-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .cpp
+
+  # ── C# ────────────────────────────────────────────────────────────────────
+  - name: csharp-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .cs
+
+  - name: csharp-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .cs
+
+  - name: csharp-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .cs
+
+  - name: csharp-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .cs
+
+  - name: csharp-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .cs
+
+  - name: csharp-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .cs
+
+  # ── PHP ───────────────────────────────────────────────────────────────────
+  - name: php-if
+    kind: if
+    pattern: '^\s*if\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .php
+
+  - name: php-else-if
+    kind: else_if
+    pattern: '^\s*(?:}\s*else\s+if|elseif)\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .php
+
+  - name: php-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .php
+
+  - name: php-switch
+    kind: switch
+    pattern: '^\s*switch\s*\(\s*(?P<condition>[^)]+)\s*\)'
+    language: .php
+
+  - name: php-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .php
+
+  - name: php-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .php
+
+  # ── Ruby ──────────────────────────────────────────────────────────────────
+  - name: rb-if
+    kind: if
+    pattern: '^\s*if\s+(?P<condition>.+)$'
+    language: .rb
+
+  - name: rb-elsif
+    kind: else_if
+    pattern: '^\s*elsif\s+(?P<condition>.+)$'
+    language: .rb
+
+  - name: rb-else
+    kind: else
+    pattern: '^\s*else\s*$'
+    language: .rb
+
+  - name: rb-unless
+    kind: unless
+    pattern: '^\s*unless\s+(?P<condition>.+)$'
+    language: .rb
+
+  - name: rb-case
+    kind: switch
+    pattern: '^\s*case\s+(?P<condition>.+)$'
+    language: .rb
+
+  - name: rb-when
+    kind: case
+    pattern: '^\s*when\s+(?P<condition>.+)$'
+    language: .rb
+
+  # ── Swift ─────────────────────────────────────────────────────────────────
+  - name: swift-if
+    kind: if
+    pattern: '^\s*if\s+(?P<condition>[^{]+)\s*\{'
+    language: .swift
+
+  - name: swift-else-if
+    kind: else_if
+    pattern: '^\s*}\s*else\s+if\s+(?P<condition>[^{]+)\s*\{'
+    language: .swift
+
+  - name: swift-else
+    kind: else
+    pattern: '^\s*}\s*else\s*\{'
+    language: .swift
+
+  - name: swift-switch
+    kind: switch
+    pattern: '^\s*switch\s+(?P<condition>[^{]+)\s*\{'
+    language: .swift
+
+  - name: swift-case
+    kind: case
+    pattern: '^\s*case\s+(?P<condition>[^:]+):'
+    language: .swift
+
+  - name: swift-default
+    kind: default
+    pattern: '^\s*default\s*:'
+    language: .swift

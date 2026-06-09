@@ -281,9 +281,10 @@ type Config struct {
 	ClassRules []ClassRuleDef `yaml:"class_rules"`
 	FieldRules []FieldRuleDef `yaml:"field_rules"`
 	// control_flow.yml
-	LoopRules       []LoopRuleDef       `yaml:"loop_rules"`
-	AssignmentRules []AssignmentRuleDef `yaml:"assignment_rules"`
-	ReturnRules     []ReturnRuleDef     `yaml:"return_rules"`
+	LoopRules        []LoopRuleDef        `yaml:"loop_rules"`
+	AssignmentRules  []AssignmentRuleDef  `yaml:"assignment_rules"`
+	ConditionalRules []ConditionalRuleDef `yaml:"conditional_rules"`
+	ReturnRules      []ReturnRuleDef      `yaml:"return_rules"`
 }
 
 // Per-file structs used by LoadConfig — each maps to exactly one YAML file.
@@ -313,4 +314,31 @@ type ControlFlowFile struct {
 	LoopRules       []LoopRuleDef       `yaml:"loop_rules"`
 	AssignmentRules []AssignmentRuleDef `yaml:"assignment_rules"`
 	ReturnRules     []ReturnRuleDef     `yaml:"return_rules"`
+}
+
+// Conditional Types ----------------- //
+
+type ConditionalRuleDef struct {
+	Name     string `yaml:"name"`
+	Pattern  string `yaml:"pattern"`
+	Language string `yaml:"language"`
+	Kind     string `yaml:"kind"`
+}
+
+type ConditionalRule struct {
+	Re           *regexp.Regexp
+	Kind         string
+	Language     string
+	ConditionIdx int
+}
+
+type ConditionalDef struct {
+	Kind      string `json:"kind"`
+	Condition string `json:"condition,omitempty"`
+	Line      int    `json:"line"`
+	Function  string `json:"function,omitempty"`
+}
+
+type ConditionalsFile struct {
+	ConditionalRules []ConditionalRuleDef `yaml:"conditional_rules"`
 }
