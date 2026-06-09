@@ -10,7 +10,7 @@ import (
 	"tree-sit/test/code-diagnostic/imports"
 	"tree-sit/test/code-diagnostic/returns"
 	"tree-sit/test/code-diagnostic/routes"
-	"tree-sit/test/code-diagnostic/scanner"
+	"tree-sit/test/core/scanner"
 	"tree-sit/test/types"
 )
 

@@ -1,80 +1,162 @@
 import_rules:
+ 
+  # ── Go ────────────────────────────────────────────────────────────────────
   - name: go-import
     pattern: '^\s*"(?P<import>[\w/.-]+)"\s*(//.*)?$'
     language: .go
-
+ 
   - name: go-import-alias
     pattern: '^\s*(?P<alias>\w+)\s+"(?P<import>[\w/.-]+)"\s*(//.*)?$'
     language: .go
-
+ 
   - name: go-import-single
     pattern: '^import\s+"(?P<import>[^"]+)"'
     language: .go
-
+ 
+  # ── Python ────────────────────────────────────────────────────────────────
   - name: py-import
     pattern: '^import\s+(?P<imports>.+)'
     language: .py
-
+ 
   - name: py-from-import
     pattern: '^from\s+(?P<module>[\w\.]+)\s+import\s+(?P<names>.+)'
     language: .py
-
+ 
+  # ── JavaScript ────────────────────────────────────────────────────────────
   - name: js-import
     pattern: '^import\s+.*from\s+["''](?P<import>[^"'']+)["'']'
     language: .js
-
-  - name: js-import-namespace
-    pattern: '^import\s+\*\s+as\s+\w+\s+from\s+["''](?P<import>[^"'']+)["'']'
-    language: .js
-
+ 
   - name: js-import-named
     pattern: '^import\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
     language: .js
-
-  - name: js-require
-    pattern: 'require\(["''](?P<import>[^"'']+)["'']\)'
+ 
+  - name: js-import-namespace
+    pattern: '^import\s+\*\s+as\s+\w+\s+from\s+["''](?P<import>[^"'']+)["'']'
     language: .js
-
+ 
+  - name: js-require
+    pattern: '(?:const|let|var)\s+(?:\{(?P<names>[^}]+)\}|\w+)\s*=\s*require\(["''](?P<import>[^"'']+)["'']\)'
+    language: .js
+ 
+  # ── TypeScript ────────────────────────────────────────────────────────────
   - name: ts-import
     pattern: '^import\s+.*from\s+["''](?P<import>[^"'']+)["'']'
     language: .ts
-
+ 
   - name: ts-import-named
     pattern: '^import\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
     language: .ts
-
+ 
+  - name: ts-import-type
+    pattern: '^import\s+type\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
+    language: .ts
+ 
   - name: ts-require
     pattern: 'require\(["''](?P<import>[^"'']+)["'']\)'
     language: .ts
-
+ 
   - name: tsx-import
     pattern: '^import\s+.*from\s+["''](?P<import>[^"'']+)["'']'
     language: .tsx
-
-  - name: rs-import
-    pattern: '^use\s+(?P<import>[\w:]+)'
+ 
+  # ── Rust ──────────────────────────────────────────────────────────────────
+  - name: rs-use
+    pattern: '^use\s+(?P<import>[\w:]+(?:::\{[^}]+\})?)'
     language: .rs
-
-  - name: java-import
-    pattern: '^import\s+(?:static\s+)?(?P<import>[\w\.]+)'
-    language: .java
-
-  - name: kotlin-import
-    pattern: '^import\s+(?P<import>[\w\.]+)'
-    language: .kt
-
-  - name: php-use
-    pattern: '^use\s+(?P<import>[\w\\]+)'
-    language: .php
-
-  - name: ruby-require
-    pattern: 'require\s+["''](?P<import>[^"'']+)["'']'
-    language: .rb
-
-  - name: csharp-using
-    pattern: '^using\s+(?P<import>[\w\.]+)'
-    language: .cs
-
-  - name: c-include
-    pattern: '^\s*#include\s+(?P<import><[^>]+>|"[^"]+")'
+ 
+  - name: rs-use-multi
+    pattern: '^use\s+(?P<import>[\w:]+)::\{(?P<names>[^}]+)\}'
+    language: .rs
+ 
+  - name: rs-extern-crate
+    pattern: '^extern\s+crate\s+(?P<import>\w+)'
+    language: .rs
+ 
+  # ── C ─────────────────────────────────────────────────────────────────────
+  - name: c-include-system
+    pattern: '^\s*#include\s+<(?P<import>[^>]+)>'
     language: .c
+ 
+  - name: c-include-local
+    pattern: '^\s*#include\s+"(?P<import>[^"]+)"'
+    language: .c
+ 
+  # ── C++ ───────────────────────────────────────────────────────────────────
+  - name: cpp-include-system
+    pattern: '^\s*#include\s+<(?P<import>[^>]+)>'
+    language: .cpp
+ 
+  - name: cpp-include-local
+    pattern: '^\s*#include\s+"(?P<import>[^"]+)"'
+    language: .cpp
+ 
+  - name: h-include-system
+    pattern: '^\s*#include\s+<(?P<import>[^>]+)>'
+    language: .h
+ 
+  - name: h-include-local
+    pattern: '^\s*#include\s+"(?P<import>[^"]+)"'
+    language: .h
+ 
+  - name: hpp-include-system
+    pattern: '^\s*#include\s+<(?P<import>[^>]+)>'
+    language: .hpp
+ 
+  - name: hpp-include-local
+    pattern: '^\s*#include\s+"(?P<import>[^"]+)"'
+    language: .hpp
+ 
+  # ── Java ──────────────────────────────────────────────────────────────────
+  - name: java-import
+    pattern: '^import\s+(?:static\s+)?(?P<import>[\w\.]+(?:\.\*)?)'
+    language: .java
+ 
+  # ── Kotlin ────────────────────────────────────────────────────────────────
+  - name: kt-import
+    pattern: '^import\s+(?P<import>[\w\.]+(?:\.\*)?)'
+    language: .kt
+ 
+  - name: kt-import-alias
+    pattern: '^import\s+(?P<import>[\w\.]+)\s+as\s+(?P<alias>\w+)'
+    language: .kt
+ 
+  # ── C# ────────────────────────────────────────────────────────────────────
+  - name: csharp-using
+    pattern: '^using\s+(?:static\s+)?(?P<import>[\w\.]+)'
+    language: .cs
+ 
+  - name: csharp-using-alias
+    pattern: '^using\s+(?P<alias>\w+)\s*=\s*(?P<import>[\w\.]+)'
+    language: .cs
+ 
+  # ── PHP ───────────────────────────────────────────────────────────────────
+  - name: php-use
+    pattern: '^use\s+(?P<import>[\w\\]+)(?:\s+as\s+(?P<alias>\w+))?'
+    language: .php
+ 
+  - name: php-use-named
+    pattern: '^use\s+(?P<import>[\w\\]+)\\\{(?P<names>[^}]+)\}'
+    language: .php
+ 
+  - name: php-require
+    pattern: '(?:require|require_once|include|include_once)\s*\(?["''](?P<import>[^"'']+)["'']'
+    language: .php
+ 
+  # ── Ruby ──────────────────────────────────────────────────────────────────
+  - name: rb-require
+    pattern: '^require\s+["''](?P<import>[^"'']+)["'']'
+    language: .rb
+ 
+  - name: rb-require-relative
+    pattern: '^require_relative\s+["''](?P<import>[^"'']+)["'']'
+    language: .rb
+ 
+  - name: rb-autoload
+    pattern: '^autoload\s+:\w+\s*,\s*["''](?P<import>[^"'']+)["'']'
+    language: .rb
+ 
+  # ── Swift ─────────────────────────────────────────────────────────────────
+  - name: swift-import
+    pattern: '^import\s+(?P<import>[\w\.]+)'
+    language: .swift

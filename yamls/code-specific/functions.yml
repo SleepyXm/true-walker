@@ -1,46 +1,148 @@
+
 function_rules:
-  - name: go-function
-    pattern: 'func\s+(?P<function>\w+)\s*\('
  
-  - name: go-function-typed
-    pattern: 'func\s+(?P<function>\w+)\s*\([^)]*\)\s*(?P<returntype>[\w\[\]\*]+)\s*\{'
+  # ── Go ────────────────────────────────────────────────────────────────────
+  - name: go-function
+    pattern: '^func\s+(?P<function>\w+)\s*\('
     language: .go
  
-  - name: py-def
-    pattern: 'def\s+(?P<function>\w+)\s*\('
+  - name: go-method
+    pattern: '^func\s+\(\s*\w+\s+\*?\w+\s*\)\s*(?P<function>\w+)\s*\('
+    language: .go
  
-  - name: py-def-annotated
-    pattern: 'def\s+(?P<function>\w+)\s*\([^)]*\)\s*->\s*(?P<returntype>[^:]+):'
+  - name: go-function-typed
+    pattern: '^func\s+(?P<function>\w+)\s*\([^)]*\)\s*(?P<returntype>[\w\[\]\*]+)\s*\{'
+    language: .go
+ 
+  # ── Python ────────────────────────────────────────────────────────────────
+  - name: py-def
+    pattern: '^(?:async\s+)?def\s+(?P<function>\w+)\s*\('
     language: .py
  
+  - name: py-def-annotated
+    pattern: '^(?:async\s+)?def\s+(?P<function>\w+)\s*\([^)]*\)\s*->\s*(?P<returntype>[^:]+):'
+    language: .py
+ 
+  # ── JavaScript / TypeScript ───────────────────────────────────────────────
   - name: js-function
-    pattern: 'function\s+(?P<function>\w+)\s*\('
+    pattern: '^(?:export\s+)?(?:async\s+)?function\s*\*?\s*(?P<function>\w+)\s*\('
+    language: .js
  
   - name: js-arrow-function
-    pattern: 'const\s+(?P<function>\w+)\s*=\s*\(.*\)\s*=>'
+    pattern: '(?:export\s+)?(?:const|let|var)\s+(?P<function>\w+)\s*=\s*(?:async\s*)?\('
+    language: .js
  
-  - name: ts-function-typed
-    pattern: 'function\s+(?P<function>\w+)[^)]*\)\s*:\s*(?P<returntype>[^{]+)\{'
+  - name: js-method
+    pattern: '^\s+(?:async\s+)?(?P<function>\w+)\s*\([^)]*\)\s*\{'
+    language: .js
+ 
+  - name: ts-function
+    pattern: '^(?:export\s+)?(?:async\s+)?function\s*\*?\s*(?P<function>\w+)\s*\('
     language: .ts
  
+  - name: ts-arrow-function
+    pattern: '(?:export\s+)?(?:const|let|var)\s+(?P<function>\w+)\s*=\s*(?:async\s*)?\('
+    language: .ts
+ 
+  - name: ts-function-typed
+    pattern: '^(?:export\s+)?(?:async\s+)?function\s+(?P<function>\w+)[^)]*\)\s*:\s*(?P<returntype>[^{]+)\{'
+    language: .ts
+ 
+  - name: ts-method-typed
+    pattern: '^\s+(?:async\s+)?(?:public|private|protected|readonly)?\s*(?P<function>\w+)\s*\([^)]*\)\s*:\s*(?P<returntype>[^{;]+)'
+    language: .ts
+ 
+  # ── Rust ──────────────────────────────────────────────────────────────────
   - name: rs-function
-    pattern: 'fn\s+(?P<function>\w+)\s*\('
+    pattern: '^(?:pub(?:\([\w:]+\))?\s+)?(?:async\s+)?fn\s+(?P<function>\w+)\s*'
+    language: .rs
  
-  - name: csharp-function
-    pattern: '(public|private|protected)?\s*(static)?\s*\w+\s+(?P<function>\w+)\s*\('
-    language: .cs
+  - name: rs-function-typed
+    pattern: '^(?:pub(?:\([\w:]+\))?\s+)?(?:async\s+)?fn\s+(?P<function>\w+)[^)]*\)\s*->\s*(?P<returntype>[^{]+)\{'
+    language: .rs
  
-  - name: java-function
-    pattern: '(public|private|protected)?\s*(static)?\s*\w+\s+(?P<function>\w+)\s*\('
-    language: .java
+  # ── C ─────────────────────────────────────────────────────────────────────
+  # C functions are identified by their return type (int, void, char*, struct X*, etc.)
+  # followed by a name and a parameter list. We require a known or plausible return-type
+  # token at the start of the line to avoid matching if/while/for/switch.
+  - name: c-function
+    pattern: '^\s*(?:(?:static|extern|inline|const|volatile)\s+)*(?:(?:unsigned|signed|long|short)\s+)*(?:void|int|char|float|double|bool|size_t|ssize_t|uint8_t|uint16_t|uint32_t|uint64_t|int8_t|int16_t|int32_t|int64_t|ptrdiff_t|[\w_]+_t|struct\s+\w+|enum\s+\w+)\s*(?:\*+\s*)?(?P<function>[a-zA-Z_]\w*)\s*\('
+    language: .c
  
+  - name: c-function-ptr-return
+    pattern: '^\s*(?:(?:static|extern|inline)\s+)*(?:void|int|char|[\w_]+)\s*\(\s*\*\s*(?P<function>\w+)\s*\)\s*\('
+    language: .c
+ 
+  # ── C++ ───────────────────────────────────────────────────────────────────
   - name: cpp-function
-    pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
+    pattern: '^\s*(?:(?:static|virtual|explicit|inline|const|override|final|constexpr|[[nodiscard]])\s+)*(?:(?:unsigned|signed|long|short)\s+)*(?:void|int|char|float|double|bool|auto|size_t|[\w_]+(?:::\w+)*(?:<[^>]*>)?)\s*(?:\*+\s*)?(?P<function>(?:\w+::)*[~\w]+)\s*\('
     language: .cpp
  
-  - name: c-function
-    pattern: '(?P<function>\w+)\s*\(.*\)\s*{'
-    language: .c
+  - name: cpp-destructor
+    pattern: '^\s*(?:virtual\s+)?(?P<function>~\w+)\s*\(\s*\)'
+    language: .cpp
+ 
+  - name: cpp-operator
+    pattern: '^\s*(?:[\w:<>*&\s]+)\s+(?P<function>operator\s*[^\(]+)\s*\('
+    language: .cpp
+ 
+  - name: cpp-template-function
+    pattern: '^template\s*<[^>]*>\s*(?:[\w:<>*&\s]+)\s+(?P<function>[\w:~]+)\s*\('
+    language: .cpp
+ 
+  # ── Java ──────────────────────────────────────────────────────────────────
+  - name: java-method
+    pattern: '^\s*(?:(?:public|private|protected|static|final|abstract|synchronized|native|default|transient|volatile)\s+)*(?:<[^>]+>\s+)?(?:[\w\[\]<>,\s]+)\s+(?P<function>[a-zA-Z_]\w*)\s*\('
+    language: .java
+ 
+  - name: java-constructor
+    pattern: '^\s*(?:public|private|protected)\s+(?P<function>[A-Z]\w*)\s*\('
+    language: .java
+ 
+  - name: java-annotation-method
+    pattern: '^\s*@Override\s*\n\s*(?:(?:public|private|protected)\s+)?(?:[\w<>\[\]]+\s+)+(?P<function>\w+)\s*\('
+    language: .java
+ 
+  # ── Kotlin ────────────────────────────────────────────────────────────────
+  - name: kt-function
+    pattern: '^(?:(?:public|private|protected|internal|open|override|abstract|suspend|inline|tailrec)\s+)*fun\s+(?:<[^>]+>\s+)?(?P<function>\w+)\s*\('
+    language: .kt
+ 
+  - name: kt-function-typed
+    pattern: '^(?:(?:public|private|protected|internal|open|override|suspend)\s+)*fun\s+(?P<function>\w+)[^)]*\)\s*:\s*(?P<returntype>[^{=\n]+)'
+    language: .kt
+ 
+  # ── C# ────────────────────────────────────────────────────────────────────
+  - name: csharp-method
+    pattern: '^\s*(?:(?:public|private|protected|internal|static|virtual|override|abstract|async|sealed|extern|partial|new)\s+)*(?:[\w<>\[\]?,\s]+)\s+(?P<function>[A-Za-z_]\w*)\s*\('
+    language: .cs
+ 
+  - name: csharp-constructor
+    pattern: '^\s*(?:public|private|protected|internal)\s+(?P<function>[A-Z]\w*)\s*\('
+    language: .cs
+ 
+  # ── PHP ───────────────────────────────────────────────────────────────────
+  - name: php-function
+    pattern: '^(?:(?:public|private|protected|static|abstract|final)\s+)*function\s+(?P<function>\w+)\s*\('
+    language: .php
+ 
+  - name: php-arrow-function
+    pattern: '(?:const|)\s*(?P<function>\w+)\s*=\s*fn\s*\('
+    language: .php
+ 
+  # ── Ruby ──────────────────────────────────────────────────────────────────
+  - name: rb-def
+    pattern: '^(?:\s*)def\s+(?:self\.)?(?P<function>[\w!?]+)\s*(?:\(|$)'
+    language: .rb
+ 
+  # ── Swift ─────────────────────────────────────────────────────────────────
+  - name: swift-function
+    pattern: '^(?:(?:public|private|internal|fileprivate|open|static|class|override|final|mutating|nonmutating|dynamic)\s+)*func\s+(?P<function>\w+)\s*\('
+    language: .swift
+ 
+  - name: swift-function-typed
+    pattern: '^(?:(?:public|private|internal|fileprivate|open|static|override|mutating)\s+)*func\s+(?P<function>\w+)[^)]*\)\s*->\s*(?P<returntype>[^{]+)\{'
+    language: .swift
  
 parameter_rules:
   - name: function-parameters

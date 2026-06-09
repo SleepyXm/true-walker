@@ -5,24 +5,26 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"tree-sit/test/code-diagnostic/functions"
 	"tree-sit/test/code-diagnostic/routes"
-	"tree-sit/test/code-diagnostic/scanner"
 	"tree-sit/test/config"
+	"tree-sit/test/core/scanner"
+	"tree-sit/test/core/worker"
 	"tree-sit/test/types"
-	"tree-sit/test/worker"
 )
 
 const (
 	// Mac
 	configPath = ""
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
-	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
-	rulesDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/code-specific"
+	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
+	rulesDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/code-specific"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
-	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app/backend"
+	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app"
 
 	// Windows:
 	//configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
@@ -30,6 +32,11 @@ const (
 	//targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/app/backend"
 	//targetDir = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/samples/kafka-trunk/core/src"
 )
+
+type DirGroup struct {
+	Dir   string                `json:"dir"`
+	Files []worker.FileSnapshot `json:"files"`
+}
 
 func main() {
 	cfg, err := config.Load(configPath)
@@ -83,7 +90,24 @@ func main() {
 
 	drainWg.Wait()
 
-	outFile, err := os.Create("jsons/outputbackend.json")
+	byDir := make(map[string][]worker.FileSnapshot)
+	for _, snap := range snapshots {
+		rel, _ := filepath.Rel(targetDir, filepath.Dir(snap.Path))
+		byDir[rel] = append(byDir[rel], snap)
+	}
+
+	dirs := make([]string, 0, len(byDir))
+	for dir := range byDir {
+		dirs = append(dirs, dir)
+	}
+	sort.Strings(dirs)
+
+	grouped := make([]DirGroup, 0, len(dirs))
+	for _, dir := range dirs {
+		grouped = append(grouped, DirGroup{Dir: dir, Files: byDir[dir]})
+	}
+
+	outFile, err := os.Create("jsons/outputfinsecfull.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,7 +115,7 @@ func main() {
 
 	enc := json.NewEncoder(outFile)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(snapshots); err != nil {
+	if err := enc.Encode(grouped); err != nil {
 		log.Fatal(err)
 	}
 }

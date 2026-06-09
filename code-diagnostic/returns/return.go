@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"tree-sit/test/helpers"
-	"tree-sit/test/syntax"
+	"tree-sit/test/core/helpers"
+	"tree-sit/test/core/syntax"
 	"tree-sit/test/types"
 
 	"github.com/goccy/go-yaml"

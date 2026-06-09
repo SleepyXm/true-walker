@@ -2,7 +2,7 @@ package types
 
 import (
 	"regexp"
-	"tree-sit/test/syntax"
+	"tree-sit/test/core/syntax"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
