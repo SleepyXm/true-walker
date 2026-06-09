@@ -2,17 +2,42 @@ package functions
 
 import (
 	"log"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"tree-sit/test/helpers"
 	"tree-sit/test/syntax"
 	"tree-sit/test/types"
+
+	"github.com/goccy/go-yaml"
 )
 
-func CompileRules(defs []types.FunctionRuleDef) []types.FunctionRule {
+type rulesFile struct {
+	FunctionRules []types.FunctionRuleDef `yaml:"function_rules"`
+}
+
+// LoadRules reads functions.yml and compiles only the rules that match exts.
+func LoadRules(path string, exts map[string]bool) []types.FunctionRule {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("functions: cannot read %s: %v", path, err)
+		return nil
+	}
+	var f rulesFile
+	if err := yaml.Unmarshal(data, &f); err != nil {
+		log.Printf("functions: cannot parse %s: %v", path, err)
+		return nil
+	}
+	return compileRules(f.FunctionRules, exts)
+}
+
+func compileRules(defs []types.FunctionRuleDef, exts map[string]bool) []types.FunctionRule {
 	var out []types.FunctionRule
 	for _, d := range defs {
+		if d.Language != "" && !exts[d.Language] {
+			continue
+		}
 		re, err := regexp.Compile(d.Pattern)
 		if err != nil {
 			log.Printf("skipping function rule %q: %v", d.Name, err)
@@ -84,6 +109,7 @@ func ParseParams(raw string, syn syntax.LangSyntax) []types.Param {
 	var params []types.Param
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
+
 		if p == "" {
 			continue
 		}

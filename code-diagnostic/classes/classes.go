@@ -2,17 +2,23 @@ package classes
 
 import (
 	"log"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"tree-sit/test/helpers"
 	"tree-sit/test/syntax"
 	"tree-sit/test/types"
+
+	"github.com/goccy/go-yaml"
 )
 
-func CompileClassRules(defs []types.ClassRuleDef) []types.ClassRule {
+func CompileClassRules(defs []types.ClassRuleDef, exts map[string]bool) []types.ClassRule {
 	var out []types.ClassRule
 	for _, d := range defs {
+		if d.Language != "" && len(exts) > 0 && !exts[d.Language] {
+			continue
+		}
 		re, err := regexp.Compile(d.Pattern)
 		if err != nil {
 			log.Printf("skipping class rule %q: %v", d.Name, err)
@@ -28,9 +34,12 @@ func CompileClassRules(defs []types.ClassRuleDef) []types.ClassRule {
 	return out
 }
 
-func CompileFieldRules(defs []types.FieldRuleDef) []types.FieldRule {
+func CompileFieldRules(defs []types.FieldRuleDef, exts map[string]bool) []types.FieldRule {
 	var out []types.FieldRule
 	for _, d := range defs {
+		if d.Language != "" && len(exts) > 0 && !exts[d.Language] {
+			continue
+		}
 		re, err := regexp.Compile(d.Pattern)
 		if err != nil {
 			log.Printf("skipping field rule %q: %v", d.Name, err)
@@ -46,6 +55,40 @@ func CompileFieldRules(defs []types.FieldRuleDef) []types.FieldRule {
 		})
 	}
 	return out
+}
+
+// LoadClassRules reads types.yml and compiles only the class rules that match exts.
+func LoadClassRules(path string, exts map[string]bool) []types.ClassRule {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("classes: cannot read %s: %v", path, err)
+		return nil
+	}
+	var f struct {
+		ClassRules []types.ClassRuleDef `yaml:"class_rules"`
+	}
+	if err := yaml.Unmarshal(data, &f); err != nil {
+		log.Printf("classes: cannot parse %s: %v", path, err)
+		return nil
+	}
+	return CompileClassRules(f.ClassRules, exts)
+}
+
+// LoadFieldRules reads types.yml and compiles only the field rules that match exts.
+func LoadFieldRules(path string, exts map[string]bool) []types.FieldRule {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("classes: cannot read %s: %v", path, err)
+		return nil
+	}
+	var f struct {
+		FieldRules []types.FieldRuleDef `yaml:"field_rules"`
+	}
+	if err := yaml.Unmarshal(data, &f); err != nil {
+		log.Printf("classes: cannot parse %s: %v", path, err)
+		return nil
+	}
+	return CompileFieldRules(f.FieldRules, exts)
 }
 
 func Extract(f types.SourceFile, classRules []types.ClassRule, fieldRules []types.FieldRule) []types.ClassDef {

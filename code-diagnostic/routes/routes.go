@@ -29,7 +29,7 @@ func NewExtractor(cfg *types.Config) *Extractor {
 	methods := strings.ToLower(strings.Join(cfg.RouteMethods, "|"))
 
 	var patterns []types.RoutePattern
-	for _, rule := range cfg.Rules {
+	for _, rule := range cfg.RouteRules {
 		p, err := compileRule(rule, methods)
 		if err != nil {
 			log.Printf("skipping route rule %q: %v", rule.Name, err)

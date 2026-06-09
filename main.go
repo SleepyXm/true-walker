@@ -17,16 +17,17 @@ import (
 
 const (
 	// Mac
-	//configPath = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/http.yml"
+	configPath = ""
 	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/cal.diy-main/apps/api/v2"
-	//targetDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
+	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/basic"
+	rulesDir  = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/code-specific"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app/backend"
 
 	// Windows:
-	configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
+	//configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
 
-	targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/app/backend"
+	//targetDir = "C:/Users/perce/Desktop/Projects/Webapps/Nextjs/finsec/app/backend"
 	//targetDir = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/samples/kafka-trunk/core/src"
 )
 
@@ -58,7 +59,7 @@ func main() {
 
 	for _, group := range groups {
 		drainWg.Add(1)
-		w := worker.New(group, cfg, routeExtractor)
+		w := worker.New(group, rulesDir, routeExtractor)
 
 		// Worker goroutine: reads and processes files one at a time.
 		go func(w *worker.Worker) {

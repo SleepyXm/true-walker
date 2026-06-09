@@ -2,12 +2,15 @@ package returns
 
 import (
 	"log"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"tree-sit/test/helpers"
 	"tree-sit/test/syntax"
 	"tree-sit/test/types"
+
+	"github.com/goccy/go-yaml"
 )
 
 // signals are mechanisms that cause abnormal function exit — they never
@@ -57,9 +60,15 @@ var boolLiterals = map[string]bool{
 	"True": true, "False": true,
 }
 
-func CompileRules(defs []types.ReturnRuleDef) []types.ReturnRule {
+// CompileRules compiles return rule defs, filtering out rules that don't
+// apply to any of the worker's extensions.
+// Drop this in place of the existing CompileRules in returns/returns.go.
+func CompileRules(defs []types.ReturnRuleDef, exts map[string]bool) []types.ReturnRule {
 	var out []types.ReturnRule
 	for _, d := range defs {
+		if d.Language != "" && len(exts) > 0 && !exts[d.Language] {
+			continue
+		}
 		re, err := regexp.Compile(d.Pattern)
 		if err != nil {
 			log.Printf("skipping return rule %q: %v", d.Name, err)
@@ -73,6 +82,23 @@ func CompileRules(defs []types.ReturnRuleDef) []types.ReturnRule {
 		})
 	}
 	return out
+}
+
+// LoadRules reads control_flow.yml and compiles only the return rules that match exts.
+func LoadRules(path string, exts map[string]bool) []types.ReturnRule {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("returns: cannot read %s: %v", path, err)
+		return nil
+	}
+	var f struct {
+		ReturnRules []types.ReturnRuleDef `yaml:"return_rules"`
+	}
+	if err := yaml.Unmarshal(data, &f); err != nil {
+		log.Printf("returns: cannot parse %s: %v", path, err)
+		return nil
+	}
+	return CompileRules(f.ReturnRules, exts)
 }
 
 // helper to get a default LangSyntax based on file extension

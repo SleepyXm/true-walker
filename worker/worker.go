@@ -37,15 +37,17 @@ type Worker struct {
 	Results        chan FileSnapshot
 }
 
-// New constructs a Worker and compiles all rules for the given language group.
-func New(group *scanner.LangGroup, cfg *types.Config, re *routes.Extractor) *Worker {
+// New constructs a Worker with rules pre-filtered to this language group.
+// Rules for other languages are discarded at compile time — never at extract time.
+func New(group *scanner.LangGroup, rulesDir string, re *routes.Extractor) *Worker {
+	exts := scanner.ExtensionsFor(group.Name)
 	return &Worker{
 		group:          group,
-		functionRules:  functions.CompileRules(cfg.FunctionRules),
-		importRules:    imports.CompileRules(cfg.ImportRules),
-		classRules:     classes.CompileClassRules(cfg.ClassRules),
-		fieldRules:     classes.CompileFieldRules(cfg.FieldRules),
-		returnRules:    returns.CompileRules(cfg.ReturnRules),
+		functionRules:  functions.LoadRules(filepath.Join(rulesDir, "functions.yml"), exts),
+		importRules:    imports.LoadRules(filepath.Join(rulesDir, "imports.yml"), exts),
+		classRules:     classes.LoadClassRules(filepath.Join(rulesDir, "classes.yml"), exts),
+		fieldRules:     classes.LoadFieldRules(filepath.Join(rulesDir, "classes.yml"), exts),
+		returnRules:    returns.LoadRules(filepath.Join(rulesDir, "controls.yml"), exts),
 		routeExtractor: re,
 		Results:        make(chan FileSnapshot, 32),
 	}
@@ -88,6 +90,7 @@ func (w *Worker) processFile(path string) (FileSnapshot, bool) {
 	rts := w.routeExtractor.Extract(f)
 
 	// data and f.Content go out of scope here — GC can reclaim them
+
 	data = nil
 
 	if len(fns) == 0 && len(imps) == 0 && len(cls) == 0 && len(rts) == 0 {

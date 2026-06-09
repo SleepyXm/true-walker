@@ -1,0 +1,68 @@
+name: http_routes
+
+route_methods:
+  - GET
+  - POST
+  - PUT
+  - PATCH
+  - DELETE
+
+prefix_rules:
+  - name: gin-group
+    pattern: '(?P<var>\w+)\s*:=\s*(?P<receiver>\w+)\.Group\(\s*["`](?P<prefix>/[^"`\s]+)'
+
+  - name: echo-group
+    pattern: '(?P<var>\w+)\s*:=\s*(?P<receiver>\w+)\.Group\(\s*["`](?P<prefix>/[^"`\s]+)'
+
+  - name: express-router-use
+    pattern: '(?P<receiver>\w+)\.use\(\s*["`](?P<prefix>/[^"`\s]+)["`]\s*,\s*(?P<var>\w+)'
+
+  - name: fastapi-apirouter
+    pattern: '(?P<var>\w+)\s*=\s*APIRouter\([^)]*prefix\s*=\s*["`](?P<prefix>/[^"`\s]+)'
+
+  - name: fastapi-include-router
+    pattern: '\.include_router\s*\(\s*(?P<var>\w+)[^)]*prefix\s*=\s*["`''](?P<prefix>/[^"`''\s]+)'
+
+  - name: axum-nest
+    pattern: '\.nest\(\s*["`](?P<prefix>/[^"`\s]+)["`]\s*,\s*(?P<var>\w+)'
+
+  - name: laravel-prefix-group
+    pattern: 'Route::prefix\s*\(\s*["`''](?P<prefix>/[^"`''\s]+)["`'']\s*\)\s*->\s*group\s*\(.*(?P<var>\w+)\s*\)'
+
+route_rules:
+  - name: dot-method
+    pattern: '(?P<receiver>\w+)\.(?P<method>METHOD)\s*\(\s*["`](?P<path>/[^"`\s]*)'
+
+  - name: axum-route
+    pattern: '(?P<receiver>\w+)\.route\(\s*["`](?P<path>/[^"`\s]+)["`]\s*,\s*(?P<method>METHOD)\s*\('
+
+  - name: decorator
+    pattern: '@(?P<receiver>\w+)\.(?P<method>METHOD)\s*\(\s*["`](?P<path>/[^"`\s]+)'
+
+  - name: flask-route
+    pattern: '@(?P<receiver>\w+)\.route\(\s*["`](?P<path>/[^"`\s]+)["`][^)]*methods\s*=\s*\[(?P<method>[^\]]+)\]'
+    multi: true
+
+  - name: rust-macro
+    pattern: '#\[\s*(?P<method>METHOD)\s*\(\s*["`](?P<path>/[^"`\s]+)'
+
+  - name: go-mux
+    pattern: '"(?P<method>GET|POST|PUT|PATCH|DELETE)\s+(?P<path>/[^"]+)"'
+
+  - name: go-handlefunc-methods
+    pattern: '\.HandleFunc\s*\(\s*["`](?P<path>/[^"`\s]+)["`][^)]*\)\.Methods\s*\(\s*["`](?P<method>METHOD)["`]'
+
+  - name: spring-mapping
+    pattern: '@(?P<method>METHOD)Mapping\s*\(\s*(?:value\s*=\s*|path\s*=\s*)?["`](?P<path>/[^"`\s]+)'
+
+  - name: nestjs-decorator
+    pattern: '@(?P<method>METHOD)\s*\(\s*["`''](?P<path>/[^"`''\s]*)["`'']'
+
+  - name: aspnet-attribute
+    pattern: '\[Http(?P<method>METHOD)\s*\(\s*["`](?P<path>[^"`\s]+)'
+
+  - name: laravel-route
+    pattern: 'Route::(?P<method>METHOD)\s*\(\s*["`''](?P<path>/[^"`''\s]+)'
+
+  - name: rails-route
+    pattern: '^\s*(?P<method>METHOD)\s+["`''](?P<path>/[^"`''\s]+)'

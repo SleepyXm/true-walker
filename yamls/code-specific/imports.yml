@@ -1,0 +1,80 @@
+import_rules:
+  - name: go-import
+    pattern: '^\s*"(?P<import>[\w/.-]+)"\s*(//.*)?$'
+    language: .go
+
+  - name: go-import-alias
+    pattern: '^\s*(?P<alias>\w+)\s+"(?P<import>[\w/.-]+)"\s*(//.*)?$'
+    language: .go
+
+  - name: go-import-single
+    pattern: '^import\s+"(?P<import>[^"]+)"'
+    language: .go
+
+  - name: py-import
+    pattern: '^import\s+(?P<imports>.+)'
+    language: .py
+
+  - name: py-from-import
+    pattern: '^from\s+(?P<module>[\w\.]+)\s+import\s+(?P<names>.+)'
+    language: .py
+
+  - name: js-import
+    pattern: '^import\s+.*from\s+["''](?P<import>[^"'']+)["'']'
+    language: .js
+
+  - name: js-import-namespace
+    pattern: '^import\s+\*\s+as\s+\w+\s+from\s+["''](?P<import>[^"'']+)["'']'
+    language: .js
+
+  - name: js-import-named
+    pattern: '^import\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
+    language: .js
+
+  - name: js-require
+    pattern: 'require\(["''](?P<import>[^"'']+)["'']\)'
+    language: .js
+
+  - name: ts-import
+    pattern: '^import\s+.*from\s+["''](?P<import>[^"'']+)["'']'
+    language: .ts
+
+  - name: ts-import-named
+    pattern: '^import\s+\{(?P<names>[^}]+)\}\s+from\s+["''](?P<import>[^"'']+)["'']'
+    language: .ts
+
+  - name: ts-require
+    pattern: 'require\(["''](?P<import>[^"'']+)["'']\)'
+    language: .ts
+
+  - name: tsx-import
+    pattern: '^import\s+.*from\s+["''](?P<import>[^"'']+)["'']'
+    language: .tsx
+
+  - name: rs-import
+    pattern: '^use\s+(?P<import>[\w:]+)'
+    language: .rs
+
+  - name: java-import
+    pattern: '^import\s+(?:static\s+)?(?P<import>[\w\.]+)'
+    language: .java
+
+  - name: kotlin-import
+    pattern: '^import\s+(?P<import>[\w\.]+)'
+    language: .kt
+
+  - name: php-use
+    pattern: '^use\s+(?P<import>[\w\\]+)'
+    language: .php
+
+  - name: ruby-require
+    pattern: 'require\s+["''](?P<import>[^"'']+)["'']'
+    language: .rb
+
+  - name: csharp-using
+    pattern: '^using\s+(?P<import>[\w\.]+)'
+    language: .cs
+
+  - name: c-include
+    pattern: '^\s*#include\s+(?P<import><[^>]+>|"[^"]+")'
+    language: .c

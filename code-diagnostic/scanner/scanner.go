@@ -15,8 +15,6 @@ import (
 	"github.com/smacker/go-tree-sitter/rust"
 )
 
-// extGroup maps file extensions to a canonical language group name.
-// Extensions in the same group share a single worker.
 var extGroup = map[string]string{
 	".go":   "go",
 	".py":   "python",
@@ -45,15 +43,25 @@ var groupLanguage = map[string]*sitter.Language{
 }
 
 // LangGroup holds metadata and all file paths for one language group.
-// No file content is read here.
 type LangGroup struct {
 	Name     string
-	Language *sitter.Language // nil if no tree-sitter grammar registered
+	Language *sitter.Language
 	Paths    []string
 }
 
+// ExtensionsFor returns the set of file extensions belonging to a language group.
+// Used by workers to filter compiled rules at construction time.
+func ExtensionsFor(groupName string) map[string]bool {
+	out := make(map[string]bool)
+	for ext, name := range extGroup {
+		if name == groupName {
+			out[ext] = true
+		}
+	}
+	return out
+}
+
 // GroupByLanguage walks root and buckets file paths by language group.
-// It is the only place that touches the filesystem during the scan phase.
 func GroupByLanguage(root string) (map[string]*LangGroup, error) {
 	groups := make(map[string]*LangGroup)
 
