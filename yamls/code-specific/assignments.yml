@@ -1,0 +1,99 @@
+assignment_rules:
+
+  # ── Go ───────────────────────────────────────────────
+
+  - name: go-assignment
+    pattern: '^(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .go
+
+  - name: go-short-declaration
+    pattern: '^(?P<var>\w+)\s*:=\s*(?P<value>.+)$'
+    language: .go
+
+  - name: go-multi-assignment
+    pattern: '^(?P<var>[\w,\s]+)\s*:=\s*(?P<value>.+)$'
+    language: .go
+
+  # ── Python ───────────────────────────────────────────
+
+  - name: py-assignment
+    pattern: '^(?P<var>[A-Za-z_]\w*)\s*=\s*(?P<value>.+)$'
+    language: .py
+
+  - name: py-annotated-assignment
+    pattern: '^(?P<var>[A-Za-z_]\w*)\s*:\s*[^=]+\s*=\s*(?P<value>.+)$'
+    language: .py
+
+  # ── TypeScript / JavaScript ──────────────────────────
+
+  - name: ts-const
+    pattern: '^(?:export\s+)?const\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .ts
+
+  - name: ts-let
+    pattern: '^(?:export\s+)?let\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .ts
+
+  - name: ts-var
+    pattern: '^(?:export\s+)?var\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .ts
+
+  - name: tsx-const
+    pattern: '^(?:export\s+)?const\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .tsx
+
+  - name: js-const
+    pattern: '^(?:export\s+)?const\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .js
+
+  - name: js-let
+    pattern: '^(?:export\s+)?let\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .js
+
+  # ── Rust ─────────────────────────────────────────────
+
+  - name: rs-let
+    pattern: '^let\s+(?:mut\s+)?(?P<var>\w+)\s*=\s*(?P<value>.+);?$'
+    language: .rs
+
+  # ── Java ─────────────────────────────────────────────
+
+  - name: java-assignment
+    pattern: '^(?P<var>\w+)\s*=\s*(?P<value>.+);?$'
+    language: .java
+
+  - name: java-declaration
+    pattern: '^(?:final\s+)?[\w<>]+\s+(?P<var>\w+)\s*=\s*(?P<value>.+);?$'
+    language: .java
+
+  # ── Kotlin ───────────────────────────────────────────
+
+  - name: kt-val
+    pattern: '^val\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .kt
+
+  - name: kt-var
+    pattern: '^var\s+(?P<var>\w+)\s*=\s*(?P<value>.+)$'
+    language: .kt
+
+  # ── C# ───────────────────────────────────────────────
+
+  - name: csharp-var
+    pattern: '^var\s+(?P<var>\w+)\s*=\s*(?P<value>.+);?$'
+    language: .cs
+
+  - name: csharp-typed
+    pattern: '^[\w<>]+\s+(?P<var>\w+)\s*=\s*(?P<value>.+);?$'
+    language: .cs
+
+  # ── PHP ──────────────────────────────────────────────
+
+  - name: php-assignment
+    pattern: '^\$(?P<var>\w+)\s*=\s*(?P<value>.+);?$'
+    language: .php
+
+  # ── Ruby ─────────────────────────────────────────────
+
+  - name: rb-assignment
+    pattern: '^(?P<var>[a-z_]\w*)\s*=\s*(?P<value>.+)$'
+    language: .rb

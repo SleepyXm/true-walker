@@ -125,6 +125,10 @@ body { background: var(--bg); color: var(--tx); font-family: var(--sans); min-he
 .rets.i1 { padding-left: 60px; }
 .rets em { font-style: normal; color: var(--rt); opacity: .85; }
 
+.assignment { font: 11px var(--mono); color: var(--pr); padding: 1px 14px 4px 44px; }
+.assignment.i1 { padding-left: 60px; }
+.assignment em { font-style: normal; color: var(--pr); opacity: .85; }
+
 mark { background: rgba(200,240,96,.18); color: var(--acc); border-radius: 2px; padding: 0 1px; }
 
 .empty, .init { text-align: center; padding: 4rem 0; font-size: 13px; color: var(--mt); }
@@ -187,6 +191,7 @@ function parseFile(raw) {
   const imps = raw.imports   ?? [];
   const cls  = raw.classes   ?? [];
   const rts  = raw.routes    ?? [];
+  const assignments = raw.assignments ?? [];
 
   const classOf = {};
   for (const c of cls)
@@ -204,7 +209,7 @@ function parseFile(raw) {
           (fnUses[site.Function] ??= []).push({ ip, sym });
   }
 
-  return { path, fns, imps, cls, rts, classOf, fnUses };
+  return { path, fns, imps, cls, rts, classOf, fnUses, assignments };
 }
 
 // ── load ───────────────────────────────────────────────────────────────────────
@@ -239,6 +244,13 @@ function renderReturns(fn, indent = '') {
   return `<div class="rets ${indent}">returns: ${sorted.map(r=>`<em>${esc(r.shape)}</em><span class="retln">:L${r.line}</span>`).join(' · ')}</div>`;
 }
 
+function renderAssignments(fn, indent = '') {
+  const assigns = fn.assignments ?? [];
+  if (!assigns.length) return '';
+  const sorted = [...assigns].sort((a,b) => (a.line??0)-(b.line??0));
+  return `<div class="assignment ${indent}">assignments: ${sorted.map(a=>`<em>${esc(a.var)} = ${esc(a.value)}</em><span class="retln">:L${a.line}</span>`).join(' · ')}</div>`;
+}
+
 function renderFn(fn, q, indent, fnUses) {
   return `
     <div class="row ${indent}">
@@ -248,7 +260,8 @@ function renderFn(fn, q, indent, fnUses) {
       ${fn.StartLine ? `<span class="ln">L${fn.StartLine}</span>` : ''}
     </div>
     ${renderReturns(fn, indent)}
-    ${renderUses(fn.Name??'', fnUses, indent)}`;
+    ${renderUses(fn.Name??'', fnUses, indent)}
+    ${renderAssignments(fn, indent)}`;
 }
 
 // ── section renderers ──────────────────────────────────────────────────────────
@@ -289,6 +302,15 @@ function secImports(imps, q, pm) {
   }).join('')}</div>`;
 }
 
+function secAssignments(assignments, q, pm) {
+  const visible = assignments.filter(a => pm || has(a.var,q) || has(a.value,q));
+  if (!visible.length) return '';
+  return `<div class="sec"><div class="slbl">Assignments</div>${visible.map(a => {
+    const det = a.type ? `${a.type} = ${a.value}` : a.value;
+    return `<div class="row"><span class="b" style="background: var(--pr-bg); color: var(--pr);">assign</span><span class="sym">${hl(a.var,q)}</span>${det?`<span class="det">${hl(det,q)}</span>`:''}${a.line?`<span class="ln">L${a.line}</span>`:''}</div>`;
+  }).join('')}</div>`;
+}
+
 function secRoutes(rts, q, pm) {
   const visible = rts.filter(rt => { const d=rt.Data??{}; return pm||has(d.path??d.Path,q)||has(d.method??d.Method,q); });
   if (!visible.length) return '';
@@ -308,6 +330,7 @@ function renderFile(fd, q) {
     show('functions') && secFunctions(fns, classOf, fnUses, q, pm),
     show('classes')   && secClasses(cls, fns, classOf, fnUses, q, pm),
     show('imports')   && secImports(imps, q, pm),
+    show('assignments') && secAssignments(fd.assignments ?? [], q, pm),
     show('routes')    && secRoutes(rts, q, pm),
   ].filter(Boolean).join('');
 

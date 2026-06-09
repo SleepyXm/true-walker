@@ -132,12 +132,13 @@ type Param struct {
 }
 
 type FunctionDef struct {
-	Name      string
-	StartLine int
-	EndLine   int
-	Params    []Param
-	RawParams string
-	Returns   []ReturnDef `json:"returns,omitempty"`
+	Name        string
+	StartLine   int
+	EndLine     int
+	Params      []Param
+	RawParams   string
+	Returns     []ReturnDef     `json:"returns,omitempty"`
+	Assignments []AssignmentDef `json:"assignments,omitempty"`
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -203,16 +204,40 @@ type LoopRule struct {
 	Language string
 }
 
-type AssignmentRuleDef struct {
-	Name     string `yaml:"name"`
-	Pattern  string `yaml:"pattern"`
-	Language string `yaml:"language"`
+type AssignmentDef struct {
+	Var      string `json:"var"`
+	Value    string `json:"value,omitempty"`
+	Line     int    `json:"line"`
+	Function string `json:"function,omitempty"`
 }
 
-type AssignmentRule struct {
-	Re     *regexp.Regexp
-	VarIdx int
+type AssignmentRuleDef struct {
+	Language string `yaml:"language"`
+	Name     string `yaml:"name"`
+	Pattern  string `yaml:"pattern"`
+	Var      string
+	Value    string
+	Line     int
+	Function string
 }
+
+//type AssignmentRuleDef struct {
+//	Name     string `yaml:"name"`
+//	Pattern  string `yaml:"pattern"`
+//	Language string `yaml:"language"`
+//}
+
+type AssignmentRule struct {
+	Re       *regexp.Regexp
+	VarIdx   int
+	ValueIdx int
+	Language string
+}
+
+//type AssignmentRule struct {
+//	Re     *regexp.Regexp
+//	VarIdx int
+//}
 
 type ReturnRuleDef struct {
 	Name     string `yaml:"name"`

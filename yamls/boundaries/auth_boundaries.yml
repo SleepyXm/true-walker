@@ -1,0 +1,21 @@
+hashing:
+  - bcrypt
+  - argon2
+  - scrypt
+  - pbkdf2
+  - CryptContext
+  - Fernet
+
+tokens:
+  - jwt
+  - jwe
+  - jws
+  - JWTError
+  - refresh_token
+  - access_token
+  - bearer
+
+cookies:
+  - httponly
+  - samesite
+  - csrf

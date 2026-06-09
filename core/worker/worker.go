@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"tree-sit/test/code-diagnostic/assignments"
 	"tree-sit/test/code-diagnostic/classes"
 	"tree-sit/test/code-diagnostic/functions"
 	"tree-sit/test/code-diagnostic/imports"
@@ -16,25 +17,27 @@ import (
 
 // FileSnapshot is the processed result for a single file.
 type FileSnapshot struct {
-	Path      string              `json:"path"`
-	Functions []types.FunctionDef `json:"functions"`
-	Imports   []types.Import      `json:"imports"`
-	Classes   []types.ClassDef    `json:"classes"`
-	Routes    []types.Primitive   `json:"routes"`
-	Returns   []types.ReturnDef   `json:"returns"`
+	Path        string                `json:"path"`
+	Functions   []types.FunctionDef   `json:"functions"`
+	Imports     []types.Import        `json:"imports"`
+	Classes     []types.ClassDef      `json:"classes"`
+	Routes      []types.Primitive     `json:"routes"`
+	Returns     []types.ReturnDef     `json:"returns"`
+	Assignments []types.AssignmentDef `json:"assignments,omitempty"`
 }
 
 // Worker owns a language group and all compiled rules for it.
 // Rules are compiled once at construction; never recompiled per file.
 type Worker struct {
-	group          *scanner.LangGroup
-	functionRules  []types.FunctionRule
-	importRules    []types.ImportRule
-	classRules     []types.ClassRule
-	fieldRules     []types.FieldRule
-	returnRules    []types.ReturnRule
-	routeExtractor *routes.Extractor
-	Results        chan FileSnapshot
+	group           *scanner.LangGroup
+	functionRules   []types.FunctionRule
+	importRules     []types.ImportRule
+	classRules      []types.ClassRule
+	fieldRules      []types.FieldRule
+	returnRules     []types.ReturnRule
+	assignmentRules []types.AssignmentRule
+	routeExtractor  *routes.Extractor
+	Results         chan FileSnapshot
 }
 
 // New constructs a Worker with rules pre-filtered to this language group.
@@ -42,14 +45,15 @@ type Worker struct {
 func New(group *scanner.LangGroup, rulesDir string, re *routes.Extractor) *Worker {
 	exts := scanner.ExtensionsFor(group.Name)
 	return &Worker{
-		group:          group,
-		functionRules:  functions.LoadRules(filepath.Join(rulesDir, "functions.yml"), exts),
-		importRules:    imports.LoadRules(filepath.Join(rulesDir, "imports.yml"), exts),
-		classRules:     classes.LoadClassRules(filepath.Join(rulesDir, "classes.yml"), exts),
-		fieldRules:     classes.LoadFieldRules(filepath.Join(rulesDir, "classes.yml"), exts),
-		returnRules:    returns.LoadRules(filepath.Join(rulesDir, "controls.yml"), exts),
-		routeExtractor: re,
-		Results:        make(chan FileSnapshot, 32),
+		group:           group,
+		functionRules:   functions.LoadRules(filepath.Join(rulesDir, "functions.yml"), exts),
+		importRules:     imports.LoadRules(filepath.Join(rulesDir, "imports.yml"), exts),
+		classRules:      classes.LoadClassRules(filepath.Join(rulesDir, "classes.yml"), exts),
+		fieldRules:      classes.LoadFieldRules(filepath.Join(rulesDir, "classes.yml"), exts),
+		returnRules:     returns.LoadRules(filepath.Join(rulesDir, "controls.yml"), exts),
+		assignmentRules: assignments.LoadRules(filepath.Join(rulesDir, "assignments.yml"), exts),
+		routeExtractor:  re,
+		Results:         make(chan FileSnapshot, 32),
 	}
 }
 
@@ -88,21 +92,23 @@ func (w *Worker) processFile(path string) (FileSnapshot, bool) {
 	imps := imports.Resolve(f, imports.Extract(f, w.importRules), fns)
 	cls := classes.Extract(f, w.classRules, w.fieldRules)
 	rts := w.routeExtractor.Extract(f)
+	assignments := assignments.Extract(f, w.assignmentRules, fns)
 
 	// data and f.Content go out of scope here — GC can reclaim them
 
 	data = nil
 
-	if len(fns) == 0 && len(imps) == 0 && len(cls) == 0 && len(rts) == 0 {
+	if len(fns) == 0 && len(imps) == 0 && len(cls) == 0 && len(rts) == 0 && len(assignments) == 0 {
 		return FileSnapshot{}, false
 	}
 
 	return FileSnapshot{
-		Path:      path,
-		Functions: fns,
-		Imports:   imps,
-		Classes:   cls,
-		Routes:    rts,
-		Returns:   rets,
+		Path:        path,
+		Functions:   fns,
+		Imports:     imps,
+		Classes:     cls,
+		Routes:      rts,
+		Returns:     rets,
+		Assignments: assignments,
 	}, true
 }

@@ -25,6 +25,7 @@ const (
 	rulesDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/yamls/code-specific"
 	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
 	targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Webapps/Nextjs/finsec/app"
+	//targetDir = "/Users/percedoutprince/Desktop/VSCodeProjects/Backend/Go/tree-sit/samples/redis-unstable/src"
 
 	// Windows:
 	//configPath = "C:/Users/perce/Desktop/Projects/Backend/Go/tree-sit/yamls/http.yml"
@@ -122,7 +123,8 @@ func main() {
 
 func printSnapshot(snap worker.FileSnapshot) {
 	if len(snap.Functions) == 0 && len(snap.Imports) == 0 &&
-		len(snap.Classes) == 0 && len(snap.Routes) == 0 {
+		len(snap.Classes) == 0 && len(snap.Routes) == 0 &&
+		len(snap.Assignments) == 0 {
 		return
 	}
 	fmt.Println("\n===", snap.Path)
@@ -158,6 +160,7 @@ func printSnapshot(snap worker.FileSnapshot) {
 			}
 		}
 	}
+
 	for _, route := range snap.Routes {
 		fn := functions.Containing(snap.Functions, route.StartLine)
 		if fn != "" {
@@ -166,6 +169,16 @@ func printSnapshot(snap worker.FileSnapshot) {
 		} else {
 			fmt.Printf("  [%s] %s  (line %d)\n",
 				route.Data["method"], route.Data["path"], route.StartLine)
+		}
+	}
+	for _, assignment := range snap.Assignments {
+		fn := functions.Containing(snap.Functions, assignment.Line)
+		if fn != "" {
+			fmt.Printf("  %s = %s  (line %d, in %s)\n",
+				assignment.Var, assignment.Value, assignment.Line, fn)
+		} else {
+			fmt.Printf("  %s = %s  (line %d)\n",
+				assignment.Var, assignment.Value, assignment.Line)
 		}
 	}
 	for _, class := range snap.Classes {
