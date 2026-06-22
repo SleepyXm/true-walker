@@ -19,7 +19,7 @@ It walks a codebase language by language, spawning a worker per language group. 
 - **Import usage** — what does this file actually use from what it imports, and where?
 - **Type structure** — what fields do these types carry, what do they extend?
 - **Function signatures** — what goes in, what comes out?
-From those signals it builds a semantic model of the codebase. A function that returns `data+error` and sits behind a POST route is probably a write handler. A file that imports a database driver, defines column-annotated structs, and returns records is probably the persistence layer. The names don't matter — the behavior does.
+From those signals it builds a behaviour model of the codebase. A function that returns `data+error` and sits behind a POST route is probably a write handler. A file that imports a database driver, defines column-annotated structs, and returns records is probably the persistence layer. The names don't matter — the behavior does.
  
 ---
  
